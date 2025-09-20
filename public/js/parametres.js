@@ -108,6 +108,7 @@ const settingsNavBtns = document.querySelectorAll('.settings-nav-btn');
 const settingsSections = document.querySelectorAll('.settings-section');
 const profileForm = document.getElementById('profileForm');
 const passwordForm = document.getElementById('passwordForm');
+const preferencesForm = document.getElementById('preferencesForm');
 const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
 const photoInput = document.getElementById('photoInput');
 const profilePhoto = document.getElementById('profilePhoto');
@@ -138,6 +139,7 @@ function setupEventListeners() {
     // Formulaires
     profileForm.addEventListener('submit', handleProfileSubmit);
     passwordForm.addEventListener('submit', handlePasswordSubmit);
+    preferencesForm.addEventListener('submit', handlePreferencesSubmit);
 
     // Upload de photo
     uploadPhotoBtn.addEventListener('click', () => photoInput.click());
@@ -269,9 +271,7 @@ function handleSwitchChange(e) {
     } else if (id === 'darkMode') {
         userData.preferences[id] = value;
         applyDarkMode(value);
-        // Sauvegarder les changements de préférences
-        saveUserData();
-        showNotification('Préférence mise à jour', 'success');
+        // Ne pas sauvegarder automatiquement, attendre le bouton "Enregistrer"
     } else {
         // C'est une notification, faire un appel API
         console.log('🔔 Switch de notification modifié:', id, '=', value);
@@ -288,9 +288,7 @@ function handleSelectChange(e) {
     // Mettre à jour les données utilisateur
     if (id === 'language' || id === 'timezone' || id === 'dateFormat' || id === 'currency') {
         userData.preferences[id] = value;
-        // Sauvegarder les changements de préférences
-        saveUserData();
-        showNotification('Préférence mise à jour', 'success');
+        // Ne pas sauvegarder automatiquement, attendre le bouton "Enregistrer"
     } else {
         // C'est une notification, faire un appel API
         userData.notifications[id] = value;
@@ -828,6 +826,87 @@ function updatePassword() {
         submitBtn.innerHTML = originalContent;
         submitBtn.disabled = false;
         
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    });
+}
+
+// Gestion du formulaire de préférences
+function handlePreferencesSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(preferencesForm);
+    const updatedPreferences = {
+        language: document.getElementById('language').value,
+        timezone: document.getElementById('timezone').value,
+        darkMode: document.getElementById('darkMode').checked,
+        dateFormat: document.getElementById('dateFormat').value,
+        currency: document.getElementById('currency').value
+    };
+    
+    // Afficher le modal de confirmation
+    showConfirmationModal({
+        title: 'Confirmer la sauvegarde',
+        content: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <i class="fas fa-sliders-h" style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem;"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">Êtes-vous sûr de vouloir sauvegarder vos préférences ?</p>
+                <p style="color: #6b7280; font-size: 0.9rem;">Vos préférences d'interface seront mises à jour.</p>
+            </div>
+        `,
+        onConfirm: () => {
+            closeConfirmationModal();
+            savePreferencesData(updatedPreferences);
+        }
+    });
+}
+
+// Fonction pour sauvegarder les données de préférences avec loader
+function savePreferencesData(updatedPreferences) {
+    const saveButton = preferencesForm.querySelector('button[type="submit"]');
+    const originalText = saveButton.innerHTML;
+    
+    // Activer l'état de chargement
+    saveButton.disabled = true;
+    saveButton.innerHTML = `
+        <i class="fas fa-spinner fa-spin"></i> Sauvegarde en cours...
+    `;
+    
+    // Faire l'appel API pour sauvegarder
+    fetch('/parametres/preferences', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedPreferences)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restaurer le bouton
+        saveButton.disabled = false;
+        saveButton.innerHTML = originalText;
+        
+        if (data.success) {
+            // Mettre à jour les données locales
+            userData.preferences = { ...userData.preferences, ...data.data.preferences };
+            
+            // Sauvegarder en localStorage
+            saveUserData();
+            
+            // Afficher la notification de succès
+            showNotification(data.message || 'Préférences mises à jour avec succès', 'success');
+        } else {
+            // Afficher l'erreur
+            showNotification(data.message || 'Erreur lors de la sauvegarde', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de la sauvegarde des préférences:', error);
+        
+        // Restaurer le bouton
+        saveButton.disabled = false;
+        saveButton.innerHTML = originalText;
+        
+        // Afficher l'erreur
         showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
     });
 }

@@ -288,8 +288,9 @@
                 <p>Personnalisez votre expérience</p>
             </div>
             
-            <div class="preferences-section">
-                <div class="preference-category">
+            <form id="preferencesForm" class="settings-form">
+                <div class="preferences-section">
+                    <div class="preference-category">
                     <h3>Interface</h3>
                     
                     <div class="form-group">
@@ -347,7 +348,14 @@
                         </select>
                     </div>
                 </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer les préférences
+                    </button>
+                </div>
             </div>
+            </form>
         </div>
 
         <!-- Section Facturation -->
