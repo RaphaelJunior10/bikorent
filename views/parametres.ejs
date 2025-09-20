@@ -288,13 +288,14 @@
                 <p>Personnalisez votre expérience</p>
             </div>
             
-            <div class="preferences-section">
-                <div class="preference-category">
+            <form id="preferencesForm" class="settings-form">
+                <div class="preferences-section">
+                    <div class="preference-category">
                     <h3>Interface</h3>
                     
                     <div class="form-group">
                         <label for="language">Langue</label>
-                        <select id="language" name="language">
+                        <select id="language" name="language" disabled>
                             <option value="fr" selected>Français</option>
                             <option value="en">English</option>
                             <option value="es">Español</option>
@@ -304,11 +305,13 @@
                     
                     <div class="form-group">
                         <label for="timezone">Fuseau horaire</label>
-                        <select id="timezone" name="timezone">
-                            <option value="Europe/Paris" selected>Europe/Paris (UTC+1)</option>
+                        <select id="timezone" name="timezone" disabled>
+                            <option value="Afrique/Gabon" selected>Afrique/Gabon (UTC+1)</option>
+                            <option value="Europe/Paris" >Europe/Paris (UTC+1)</option>
                             <option value="Europe/London">Europe/London (UTC+0)</option>
                             <option value="America/New_York">America/New_York (UTC-5)</option>
                             <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+                            <option value="Afrique/Gabon">Afrique/Gabon (UTC+1)</option>
                         </select>
                     </div>
                     
@@ -331,7 +334,7 @@
                     
                     <div class="form-group">
                         <label for="dateFormat">Format de date</label>
-                        <select id="dateFormat" name="dateFormat">
+                        <select id="dateFormat" name="dateFormat" disabled>
                             <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
                             <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                             <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -340,14 +343,22 @@
                     
                     <div class="form-group">
                         <label for="currency">Devise</label>
-                        <select id="currency" name="currency">
-                            <option value="EUR" selected>Euro (€)</option>
+                        <select id="currency" name="currency" disabled>
+                            <option value="XAF" selected>Franc CFA (XAF)</option>
+                            <option value="EUR">Euro (€)</option>
                             <option value="USD">Dollar US ($)</option>
                             <option value="GBP">Livre Sterling (£)</option>
                         </select>
                     </div>
                 </div>
-            </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" disabled>
+                        <i class="fas fa-save"></i> Enregistrer les préférences
+                    </button>
+                </div>
+            </form>
         </div>
 
         <!-- Section Facturation -->

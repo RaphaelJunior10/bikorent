@@ -609,4 +609,80 @@ router.post('/notifications', async (req, res) => {
     }
 });
 
+
+// Route pour mettre à jour les préférences
+router.post('/preferences', async (req, res) => {
+    try {
+        console.log('⚙️ Mise à jour des préférences demandée');
+        
+        const {
+            language,
+            timezone,
+            darkMode,
+            dateFormat,
+            currency
+        } = req.body;
+        
+        // Validation des données
+        if (!language || !timezone || !dateFormat || !currency) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tous les champs sont requis'
+            });
+        }
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUser = await dataService.getUserById(currentUserId);
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilisateur non trouvé'
+            });
+        }
+        
+        // Mettre à jour les préférences
+        const updateData = {
+            preferences: {
+                language: language,
+                timezone: timezone,
+                darkMode: Boolean(darkMode),
+                dateFormat: dateFormat,
+                currency: currency
+            },
+            updatedAt: new Date()
+        };
+        
+        console.log('📝 Données de préférences à mettre à jour:', updateData.preferences);
+        
+        //const updatedUser = await dataService.updateUser(currentUserId, updateData);
+        
+        if (updatedUser) {
+            console.log('✅ Préférences mises à jour avec succès');
+            res.json({
+                success: true,
+                message: 'Préférences mises à jour avec succès',
+                data: {
+                    preferences: updateData.preferences
+                }
+            });
+        } else {
+            console.error('❌ Échec de la mise à jour des préférences');
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la mise à jour des préférences'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la mise à jour des préférences:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la mise à jour des préférences'
+        });
+    }
+});
+
+
 module.exports = router; 
