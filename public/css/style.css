@@ -4755,6 +4755,18 @@ input:checked + .slider:before {
     margin-right: 0.5rem;
 }
 
+/* Styles pour le bouton de sauvegarde des préférences */
+#preferencesForm button[type="submit"]:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#preferencesForm button[type="submit"]:disabled:hover {
+    background-color: #9ca3af;
+    transform: none;
+}
+
 /* Styles pour le loader des notifications */
 .notification-loader {
     display: none;

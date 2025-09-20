@@ -727,11 +727,11 @@ class DataService {
                     reportFrequency: mainUser.notifications?.reportFrequency || "monthly"
                 },
                 preferences: {
-                    language: mainUser.language || "fr",
-                    timezone: mainUser.timezone || "Europe/Paris",
-                    darkMode: mainUser.darkMode || false,
-                    dateFormat: mainUser.dateFormat || "DD/MM/YYYY",
-                    currency: mainUser.currency || "EUR"
+                    language: mainUser.preferences?.language || "fr",
+                    timezone: mainUser.preferences?.timezone || "Europe/Paris",
+                    darkMode: mainUser.preferences?.darkMode || false,
+                    dateFormat: mainUser.preferences?.dateFormat || "DD/MM/YYYY",
+                    currency: mainUser.preferences?.currency || "EUR"
                 },
                 billing: {
                     plan: mainUser.billingPlan || "Premium",
@@ -806,7 +806,8 @@ class DataService {
             console.log('📊 Données des paramètres construites:', {
                 photo: parametresData.profile.photo,
                 hasPhoto: !!parametresData.profile.photo,
-                notifications: parametresData.notifications
+                notifications: parametresData.notifications,
+                preferences: parametresData.preferences
             });
             
             return parametresData;
