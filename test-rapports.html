@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rapports - BikoRent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .data-display {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test des Rapports - BikoRent</h1>
+        
+        <div class="test-section">
+            <h2>1. Test de l'initialisation des données</h2>
+            <button onclick="testDataInitialization()">Tester l'initialisation</button>
+            <div id="init-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Test de la structure des données</h2>
+            <button onclick="testDataStructure()">Tester la structure</button>
+            <div id="structure-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Test des données de fallback</h2>
+            <button onclick="testFallbackData()">Tester les données de fallback</button>
+            <div id="fallback-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Affichage des données actuelles</h2>
+            <button onclick="displayCurrentData()">Afficher les données</button>
+            <div id="current-data"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>5. Test de simulation des données serveur</h2>
+            <button onclick="simulateServerData()">Simuler les données serveur</button>
+            <div id="simulation-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Données de test similaires à celles du serveur
+        const testServerData = {
+            proprietaire: {
+                proprietes: [
+                    {
+                        nom: "Appartement T3 - Rue de la Paix",
+                        type: "appartement",
+                        loyer: 600,
+                        locataire: "Marie Dubois",
+                        paiements: {
+                            "Jan 2024": { paye: true, montant: 600 },
+                            "Fév 2024": { paye: false, montant: 600 },
+                            "Mar 2024": { paye: false, montant: 600 },
+                            "Avr 2024": { paye: false, montant: 600 },
+                            "Mai 2024": { paye: true, montant: 600 },
+                            "Juin 2024": { paye: true, montant: 600 },
+                            "Juil 2024": { paye: true, montant: 600 },
+                            "Août 2024": { paye: true, montant: 600 },
+                            "Sep 2024": { paye: true, montant: 600 },
+                            "Oct 2024": { paye: true, montant: 600 },
+                            "Nov 2024": { paye: true, montant: 600 },
+                            "Déc 2024": { paye: true, montant: 600 }
+                        }
+                    },
+                    {
+                        nom: "Studio - Avenue Victor Hugo",
+                        type: "studio",
+                        loyer: 650,
+                        locataire: "Jean Martin",
+                        paiements: {
+                            "Jan 2024": { paye: true, montant: 650 },
+                            "Fév 2024": { paye: true, montant: 650 },
+                            "Mar 2024": { paye: true, montant: 650 },
+                            "Avr 2024": { paye: false, montant: 650 },
+                            "Mai 2024": { paye: true, montant: 650 },
+                            "Juin 2024": { paye: true, montant: 650 },
+                            "Juil 2024": { paye: true, montant: 650 },
+                            "Août 2024": { paye: true, montant: 650 },
+                            "Sep 2024": { paye: true, montant: 650 },
+                            "Oct 2024": { paye: true, montant: 650 },
+                            "Nov 2024": { paye: true, montant: 650 },
+                            "Déc 2024": { paye: true, montant: 650 }
+                        }
+                    }
+                ],
+                stats: {
+                    revenusTotaux: 12500,
+                    tauxOccupation: 100,
+                    proprietesActives: 2,
+                    croissance: 15
+                }
+            },
+            locataire: {
+                proprietes: [
+                    {
+                        nom: "Appartement T3 - Rue de la Paix",
+                        loyer: 600,
+                        paiements: {
+                            "Jan 2024": { paye: true, montant: 600 },
+                            "Fév 2024": { paye: true, montant: 600 },
+                            "Mar 2024": { paye: false, montant: 600 },
+                            "Avr 2024": { paye: false, montant: 600 },
+                            "Mai 2024": { paye: true, montant: 600 },
+                            "Juin 2024": { paye: true, montant: 600 },
+                            "Juil 2024": { paye: true, montant: 600 },
+                            "Août 2024": { paye: true, montant: 600 },
+                            "Sep 2024": { paye: true, montant: 600 },
+                            "Oct 2024": { paye: true, montant: 600 },
+                            "Nov 2024": { paye: true, montant: 600 },
+                            "Déc 2024": { paye: true, montant: 600 }
+                        }
+                    }
+                ],
+                stats: {
+                    depensesTotales: 6000,
+                    proprietesLouees: 1,
+                    paiementsAJour: 1,
+                    economies: 500
+                }
+            }
+        };
+
+        // Données de fallback
+        const fallbackData = {
+            proprietaire: {
+                proprietes: [
+                    {
+                        nom: "Appartement T3 - Rue de la Paix",
+                        type: "appartement",
+                        loyer: 600,
+                        locataire: "Marie Dubois",
+                        paiements: {
+                            "Jan 2024": { paye: true, montant: 600 },
+                            "Fév 2024": { paye: false, montant: 600 },
+                            "Mar 2024": { paye: false, montant: 600 },
+                            "Avr 2024": { paye: false, montant: 600 },
+                            "Mai 2024": { paye: true, montant: 600 },
+                            "Juin 2024": { paye: true, montant: 600 },
+                            "Juil 2024": { paye: true, montant: 600 },
+                            "Août 2024": { paye: true, montant: 600 },
+                            "Sep 2024": { paye: true, montant: 600 },
+                            "Oct 2024": { paye: true, montant: 600 },
+                            "Nov 2024": { paye: true, montant: 600 },
+                            "Déc 2024": { paye: true, montant: 600 }
+                        }
+                    }
+                ],
+                stats: {
+                    revenusTotaux: 6000,
+                    tauxOccupation: 100,
+                    proprietesActives: 1,
+                    croissance: 15
+                }
+            },
+            locataire: {
+                proprietes: [
+                    {
+                        nom: "Appartement T3 - Rue de la Paix",
+                        loyer: 600,
+                        paiements: {
+                            "Jan 2024": { paye: true, montant: 600 },
+                            "Fév 2024": { paye: true, montant: 600 },
+                            "Mar 2024": { paye: false, montant: 600 },
+                            "Avr 2024": { paye: false, montant: 600 },
+                            "Mai 2024": { paye: true, montant: 600 },
+                            "Juin 2024": { paye: true, montant: 600 },
+                            "Juil 2024": { paye: true, montant: 600 },
+                            "Août 2024": { paye: true, montant: 600 },
+                            "Sep 2024": { paye: true, montant: 600 },
+                            "Oct 2024": { paye: true, montant: 600 },
+                            "Nov 2024": { paye: true, montant: 600 },
+                            "Déc 2024": { paye: true, montant: 600 }
+                        }
+                    }
+                ],
+                stats: {
+                    depensesTotales: 6000,
+                    proprietesLouees: 1,
+                    paiementsAJour: 1,
+                    economies: 500
+                }
+            }
+        };
+
+        function testDataInitialization() {
+            const result = document.getElementById('init-result');
+            
+            // Simuler l'absence de données serveur
+            delete window.rapportsData;
+            
+            // Test de la fonction d'initialisation
+            let rapportsData = {};
+            
+            if (window.rapportsData && window.rapportsData.proprietaire && window.rapportsData.locataire) {
+                rapportsData = window.rapportsData;
+                result.innerHTML = '<div class="success">✅ Données serveur disponibles et chargées</div>';
+            } else {
+                rapportsData = fallbackData;
+                result.innerHTML = '<div class="warning">⚠️ Données serveur non disponibles, utilisation des données de fallback</div>';
+            }
+            
+            result.innerHTML += `<div class="data-display">Données chargées: ${JSON.stringify(rapportsData, null, 2)}</div>`;
+        }
+
+        function testDataStructure() {
+            const result = document.getElementById('structure-result');
+            const testData = testServerData;
+            
+            const checks = [
+                { name: 'Propriétaire', check: testData.proprietaire },
+                { name: 'Propriétés propriétaire', check: testData.proprietaire?.proprietes },
+                { name: 'Stats propriétaire', check: testData.proprietaire?.stats },
+                { name: 'Locataire', check: testData.locataire },
+                { name: 'Propriétés locataire', check: testData.locataire?.proprietes },
+                { name: 'Stats locataire', check: testData.locataire?.stats }
+            ];
+            
+            let html = '<div class="success">✅ Structure des données testée</div>';
+            
+            checks.forEach(check => {
+                if (check.check) {
+                    html += `<div class="success">✅ ${check.name}: OK</div>`;
+                } else {
+                    html += `<div class="error">❌ ${check.name}: MANQUANT</div>`;
+                }
+            });
+            
+            result.innerHTML = html;
+        }
+
+        function testFallbackData() {
+            const result = document.getElementById('fallback-result');
+            
+            // Test avec des données vides
+            let rapportsData = {};
+            
+            if (!rapportsData.proprietaire || !rapportsData.locataire) {
+                rapportsData = fallbackData;
+                result.innerHTML = '<div class="success">✅ Données de fallback appliquées avec succès</div>';
+            } else {
+                result.innerHTML = '<div class="error">❌ Erreur dans l\'application des données de fallback</div>';
+            }
+            
+            result.innerHTML += `<div class="data-display">Données de fallback: ${JSON.stringify(rapportsData, null, 2)}</div>`;
+        }
+
+        function displayCurrentData() {
+            const result = document.getElementById('current-data');
+            
+            if (window.rapportsData) {
+                result.innerHTML = '<div class="success">✅ Données disponibles dans window.rapportsData</div>';
+                result.innerHTML += `<div class="data-display">${JSON.stringify(window.rapportsData, null, 2)}</div>`;
+            } else {
+                result.innerHTML = '<div class="error">❌ Aucune donnée disponible dans window.rapportsData</div>';
+            }
+        }
+
+        function simulateServerData() {
+            const result = document.getElementById('simulation-result');
+            
+            // Simuler les données du serveur
+            window.rapportsData = testServerData;
+            
+            // Test de l'initialisation
+            let rapportsData = {};
+            
+            if (window.rapportsData && window.rapportsData.proprietaire && window.rapportsData.locataire) {
+                rapportsData = window.rapportsData;
+                result.innerHTML = '<div class="success">✅ Simulation réussie - Données serveur chargées</div>';
+            } else {
+                rapportsData = fallbackData;
+                result.innerHTML = '<div class="warning">⚠️ Simulation échouée - Utilisation des données de fallback</div>';
+            }
+            
+            result.innerHTML += `<div class="data-display">Données simulées: ${JSON.stringify(rapportsData, null, 2)}</div>`;
+        }
+
+        // Test automatique au chargement
+        window.addEventListener('load', function() {
+            console.log('🧪 Page de test chargée');
+            console.log('window.rapportsData disponible:', !!window.rapportsData);
+            if (window.rapportsData) {
+                console.log('Données disponibles:', window.rapportsData);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<%- contentFor('body') %>
+
+<!-- Système d'onglets -->
+<div class="tabs-container">
+    <div class="tabs-header">
+        <button class="tab-btn active" data-tab="proprietaire">
+            <i class="fas fa-user-tie"></i> Propriétaire
+        </button>
+        <button class="tab-btn" data-tab="locataire">
+            <i class="fas fa-user"></i> Locataire
+        </button>
+    </div>
+
+    <!-- Onglet Propriétaire -->
+    <div class="tab-content active" id="proprietaire">
+                        <!-- Cards statistiques -->
+                <div class="stats-cards" id="proprietaireStats">
+                    <!-- Données générées par JavaScript -->
+                </div>
+
+                <!-- Alertes retard de paiement -->
+                <div class="alert-section" id="proprietaireAlertes">
+                    <!-- Données générées par JavaScript -->
+                </div>
+
+                <!-- Liste des locataires en retard -->
+                <div class="section" id="proprietaireRetards">
+                    <!-- Données générées par JavaScript -->
+                </div>
+
+                <!-- Calendrier de paiement -->
+                <div class="section">
+                    <h2><i class="fas fa-calendar-alt"></i> Calendrier de Paiement</h2>
+                    <div class="calendar-container">
+                        <div class="calendar-grid" id="proprietaireCalendar">
+                            <!-- Données générées par JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activités récentes -->
+                <div class="section" id="proprietaireActivities">
+                    <!-- Données générées par JavaScript -->
+                </div>
+    </div>
+
+    <!-- Onglet Locataire -->
+    <div class="tab-content" id="locataire">
+        <!-- Cards statistiques -->
+        <div class="stats-cards" id="locataireStats">
+            <!-- Généré par JavaScript -->
+        </div>
+
+        <!-- Calendrier de paiement -->
+        <div class="section">
+            <h2><i class="fas fa-calendar-alt"></i> Mon Calendrier de Paiement</h2>
+            <div class="calendar-container">
+                <div class="calendar-grid" id="locataireCalendar">
+                    <!-- Généré par JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Activités récentes -->
+        <div class="section" id="locataireActivities">
+            <!-- Généré par JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip pour le calendrier -->
+<div class="tooltip" id="calendarTooltip"></div>
+
+<!-- eslint-disable-next-line -->
+<script>
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line no-undef
+    window.dashboardData = <%- JSON.stringify(dashboardData) %>;
+</script>
+
+<script src="/js/dashboard.js"></script>

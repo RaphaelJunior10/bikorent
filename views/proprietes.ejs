@@ -1,0 +1,532 @@
+<!-- Contenu de la page -->
+<div class="page-container">
+    <!-- En-tête avec statistiques -->
+    <div class="page-header">
+        <div class="page-title">
+            <h2>Mes Propriétés</h2>
+            <p>Gérez vos biens immobiliers et leurs informations</p>
+        </div>
+        <button class="btn-primary" id="addPropertyBtn">
+            <i class="fas fa-plus"></i> Ajouter une propriété
+        </button>
+    </div>
+
+    <!-- Statistiques des propriétés -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Total Propriétés</h3>
+                <div class="stat-number" id="totalProperties">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Propriétés Louées</h3>
+                <div class="stat-number" id="rentedProperties">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Propriétés Vacantes</h3>
+                <div class="stat-number" id="vacantProperties">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-euro-sign"></i>
+            </div>
+            <div class="stat-info">
+                <h3>Revenus Mensuels</h3>
+                <div class="stat-number" id="monthlyRevenue">€0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="filters-section">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchProperty" placeholder="Rechercher une propriété...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">Toutes</button>
+            <button class="filter-btn" data-filter="rented">Louées</button>
+            <button class="filter-btn" data-filter="vacant">Vacantes</button>
+            <button class="filter-btn" data-filter="maintenance">En maintenance</button>
+        </div>
+    </div>
+
+    <!-- Liste des propriétés -->
+    <div class="properties-grid" id="propertiesGrid">
+        <!-- Les propriétés seront générées dynamiquement ici -->
+    </div>
+</div>
+
+<!-- Modal d'ajout/édition de propriété -->
+<div class="modal" id="propertyModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Ajouter une propriété</h3>
+            <button class="close-modal" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="propertyForm">
+            <div class="form-group">
+                <label for="propertyName">Nom de la propriété *</label>
+                <input type="text" id="propertyName" name="propertyName" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="propertyType">Type de bien *</label>
+                    <select id="propertyType" name="propertyType" required>
+                        <option value="">Sélectionner</option>
+                        <option value="appartement">Appartement</option>
+                        <option value="maison">Maison</option>
+                        <option value="studio">Studio</option>
+                        <option value="bureau">Bureau</option>
+                        <option value="commerce">Commerce</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="propertySurface">Surface (m²) *</label>
+                    <input type="number" id="propertySurface" name="propertySurface" min="1" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="propertyRooms">Nombre de pièces</label>
+                    <input type="number" id="propertyRooms" name="propertyRooms" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="propertyBedrooms">Chambres</label>
+                    <input type="number" id="propertyBedrooms" name="propertyBedrooms" min="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="propertyAddress">Adresse complète *</label>
+                <textarea id="propertyAddress" name="propertyAddress" rows="2" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="propertyCity">Ville *</label>
+                    <input type="text" id="propertyCity" name="propertyCity" required>
+                </div>
+                <div class="form-group">
+                    <label for="propertyZip">Code postal *</label>
+                    <input type="text" id="propertyZip" name="propertyZip" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="propertyRent">Loyer mensuel (€) *</label>
+                    <input type="number" id="propertyRent" name="propertyRent" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="propertyStatus">Statut *</label>
+                    <select id="propertyStatus" name="propertyStatus" required>
+                        <option value="">Sélectionner</option>
+                        <option value="vacant">Vacant</option>
+                        <option value="rented">Loué</option>
+                        <option value="maintenance">En maintenance</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="propertyDescription">Description</label>
+                <textarea id="propertyDescription" name="propertyDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="propertyFeatures">Équipements (séparés par des virgules)</label>
+                <input type="text" id="propertyFeatures" name="propertyFeatures" placeholder="Ex: Ascenseur, Balcon, Parking, Cave...">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="propertyLat">Latitude</label>
+                    <input type="number" id="propertyLat" name="propertyLat" step="any" placeholder="48.8566">
+                </div>
+                <div class="form-group">
+                    <label for="propertyLng">Longitude</label>
+                    <input type="number" id="propertyLng" name="propertyLng" step="any" placeholder="2.3522">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Localisation</label>
+                <div class="location-actions">
+                    <button type="button" class="btn-secondary" id="getCurrentLocation">
+                        <i class="fas fa-location-arrow"></i> Utiliser ma position actuelle
+                    </button>
+                    <button type="button" class="btn-secondary" id="openMapPicker">
+                        <i class="fas fa-map-marker-alt"></i> Choisir sur la carte
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="propertyPaymentLink" name="propertyPaymentLink">
+                    <span class="checkmark"></span>
+                    Activer le lien de paiement externe
+                </label>
+                <p class="help-text">Permet aux locataires de payer via un lien externe sans se connecter</p>
+            </div>
+            <div class="form-group">
+                <label for="propertyImage">Image de la propriété</label>
+                <div class="image-upload-container">
+                    <input type="file" id="propertyImage" name="propertyImage" accept="image/*" class="image-input">
+                    <div class="image-preview" id="imagePreview">
+                        <i class="fas fa-camera"></i>
+                        <span>Cliquez pour sélectionner une image</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancelProperty">Annuler</button>
+                <button type="submit" class="btn-primary" id="saveProperty">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3>Confirmer la suppression</h3>
+            <button class="close-modal" id="closeDeleteModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer cette propriété ?</p>
+            <p class="warning-text">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="cancelDelete">Annuler</button>
+            <button class="btn-danger" id="confirmDelete">Supprimer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de détails de propriété -->
+<div class="modal" id="propertyDetailsModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="detailPropertyName">Détails de la propriété</h3>
+            <button class="close-modal" id="closeDetailsModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="property-details-content">
+                <div class="property-details-left">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-info-circle"></i> Informations générales</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>Type:</label>
+                                <span id="detailType"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Surface:</label>
+                                <span id="detailSurface"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Pièces:</label>
+                                <span id="detailRooms"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Chambres:</label>
+                                <span id="detailBedrooms"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Loyer:</label>
+                                <span id="detailRent"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Statut:</label>
+                                <span id="detailStatus"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Localisation</h4>
+                        <div class="location-details">
+                            <div class="detail-item">
+                                <label>Adresse:</label>
+                                <span id="detailAddress"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Coordonnées:</label>
+                                <span id="detailCoordinates"></span>
+                            </div>
+                            <div class="location-actions-detail">
+                                <button class="btn-primary" id="openGoogleMapsBtn">
+                                    <i class="fas fa-external-link-alt"></i> Ouvrir dans Google Maps
+                                </button>
+                                <button class="btn-secondary" id="updateLocationBtn">
+                                    <i class="fas fa-location-arrow"></i> Mettre à jour la position
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-list"></i> Équipements</h4>
+                        <div id="detailFeatures" class="features-list"></div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-file-alt"></i> Description</h4>
+                        <p id="detailDescription"></p>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <div class="detail-actions">
+                            <button class="btn-primary" id="editPropertyBtn">
+                                <i class="fas fa-edit"></i> Modifier cette propriété
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="property-details-right">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-images"></i> Images de la propriété</h4>
+                        <div class="property-images-slider">
+                            <div class="slider-container">
+                                <div class="slider-track" id="imagesSlider">
+                                    <!-- Les images seront générées dynamiquement ici -->
+                                </div>
+                                <button class="slider-btn slider-prev" id="sliderPrev">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="slider-btn slider-next" id="sliderNext">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="slider-dots" id="sliderDots">
+                                <!-- Les points de navigation seront générés dynamiquement -->
+                            </div>
+                            <div class="image-actions">
+                                <button class="btn-secondary" id="addImageBtn">
+                                    <i class="fas fa-plus"></i> Ajouter une image
+                                </button>
+                                <button class="btn-danger" id="removeImageBtn" style="display: none;">
+                                    <i class="fas fa-trash"></i> Supprimer l'image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-map"></i> Carte</h4>
+                        <div class="mini-map-container">
+                            <div id="miniMap" class="mini-map"></div>
+                            <div class="map-overlay">
+                                <button class="btn-secondary" id="refreshLocationBtn">
+                                    <i class="fas fa-sync-alt"></i> Actualiser
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'édition de propriété -->
+<div class="modal" id="propertyEditModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="editPropertyName">Modifier la propriété</h3>
+            <button class="close-modal" id="closeEditModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="property-details-content">
+                <div class="property-details-left">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-info-circle"></i> Informations générales</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>Nom:</label>
+                                <input type="text" id="editPropertyNameInput" class="edit-input" required>
+                            </div>
+                            <div class="detail-item">
+                                <label>Type:</label>
+                                <select id="editPropertyType" class="edit-input" required>
+                                    <option value="">Sélectionner</option>
+                                    <option value="appartement">Appartement</option>
+                                    <option value="maison">Maison</option>
+                                    <option value="studio">Studio</option>
+                                    <option value="bureau">Bureau</option>
+                                    <option value="commerce">Commerce</option>
+                                </select>
+                            </div>
+                            <div class="detail-item">
+                                <label>Surface:</label>
+                                <input type="number" id="editPropertySurface" class="edit-input" min="1" required>
+                            </div>
+                            <div class="detail-item">
+                                <label>Pièces:</label>
+                                <input type="number" id="editPropertyRooms" class="edit-input" min="1">
+                            </div>
+                            <div class="detail-item">
+                                <label>Chambres:</label>
+                                <input type="number" id="editPropertyBedrooms" class="edit-input" min="0">
+                            </div>
+                            <div class="detail-item">
+                                <label>Loyer:</label>
+                                <input type="number" id="editPropertyRent" class="edit-input" min="0" step="0.01" required>
+                            </div>
+                            <div class="detail-item">
+                                <label>Statut:</label>
+                                <select id="editPropertyStatus" class="edit-input" required>
+                                    <option value="">Sélectionner</option>
+                                    <option value="vacant">Vacant</option>
+                                    <option value="rented">Loué</option>
+                                    <option value="maintenance">En maintenance</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Localisation</h4>
+                        <div class="location-details">
+                            <div class="detail-item">
+                                <label>Adresse:</label>
+                                <textarea id="editPropertyAddress" class="edit-input" rows="2" required></textarea>
+                            </div>
+                            <div class="detail-item">
+                                <label>Ville:</label>
+                                <input type="text" id="editPropertyCity" class="edit-input" required>
+                            </div>
+                            <div class="detail-item">
+                                <label>Code postal:</label>
+                                <input type="text" id="editPropertyZip" class="edit-input" required>
+                            </div>
+                            <div class="detail-item">
+                                <label>Latitude:</label>
+                                <input type="number" id="editPropertyLat" class="edit-input" step="any" placeholder="48.8566">
+                            </div>
+                            <div class="detail-item">
+                                <label>Longitude:</label>
+                                <input type="number" id="editPropertyLng" class="edit-input" step="any" placeholder="2.3522">
+                            </div>
+                            <div class="location-actions-detail">
+                                <button type="button" class="btn-primary" id="editOpenGoogleMapsBtn">
+                                    <i class="fas fa-external-link-alt"></i> Ouvrir dans Google Maps
+                                </button>
+                                <button type="button" class="btn-secondary" id="editGetCurrentLocation">
+                                    <i class="fas fa-location-arrow"></i> Utiliser ma position actuelle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-list"></i> Équipements</h4>
+                        <input type="text" id="editPropertyFeatures" class="edit-input" placeholder="Ex: Ascenseur, Balcon, Parking, Cave...">
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-file-alt"></i> Description</h4>
+                        <textarea id="editPropertyDescription" class="edit-input" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-link"></i> Options de paiement</h4>
+                        <div class="detail-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editPropertyPaymentLink" class="edit-checkbox">
+                                <span class="checkmark"></span>
+                                Activer le lien de paiement externe
+                            </label>
+                            <p class="help-text">Permet aux locataires de payer via un lien externe sans se connecter</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="property-details-right">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-images"></i> Images de la propriété</h4>
+                        <div class="property-images-slider">
+                            <div class="slider-container">
+                                <div class="slider-track" id="editImagesSlider">
+                                    <!-- Les images seront générées dynamiquement ici -->
+                                </div>
+                                <button class="slider-btn slider-prev" id="editSliderPrev">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="slider-btn slider-next" id="editSliderNext">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="slider-dots" id="editSliderDots">
+                                <!-- Les points de navigation seront générés dynamiquement -->
+                            </div>
+                            <div class="image-actions">
+                                <button class="btn-secondary" id="editAddImageBtn">
+                                    <i class="fas fa-plus"></i> Ajouter une image
+                                </button>
+                                <button class="btn-danger" id="editRemoveImageBtn" style="display: none;">
+                                    <i class="fas fa-trash"></i> Supprimer l'image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4><i class="fas fa-map"></i> Carte</h4>
+                        <div class="mini-map-container">
+                            <div id="editMiniMap" class="mini-map"></div>
+                            <div class="map-overlay">
+                                <button class="btn-secondary" id="editRefreshLocationBtn">
+                                    <i class="fas fa-sync-alt"></i> Actualiser
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="cancelEditBtn">
+                <i class="fas fa-times"></i> Annuler
+            </button>
+            <button class="btn-primary" id="saveEditBtn">
+                <i class="fas fa-save"></i> Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Google Maps API - Désactivé temporairement pour éviter les erreurs -->
+<!-- <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script> -->
+
+<!-- eslint-disable-next-line -->
+<script>
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line no-undef
+    window.properties = <%- JSON.stringify(properties) %>;
+</script>
+
+<!-- Imports -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+<script src="/js/proprietes.js"></script> 

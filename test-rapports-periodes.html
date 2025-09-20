@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rapports - Périodes et Filtrage</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            border-left: 4px solid #2563eb;
+        }
+        .result h4 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+        }
+        .result pre {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .no-data-message {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            margin: 1.5rem;
+        }
+        .no-data-message i {
+            font-size: 3rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .no-data-message h3 {
+            font-size: 1.25rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .no-data-message p {
+            color: #64748b;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-chart-line"></i> Test Rapports - Périodes et Filtrage</h1>
+        
+        <div class="test-section">
+            <h2>1. Test des Fonctions de Périodes</h2>
+            <div>
+                <label>Période sélectionnée:</label>
+                <select id="periodeTest" class="filter-select">
+                    <option value="12">12 derniers mois</option>
+                    <option value="24">2 dernières années</option>
+                    <option value="60">5 dernières années</option>
+                </select>
+                <button class="btn-primary" onclick="testPeriode()">Tester la période</button>
+            </div>
+            <div id="periodeResult" class="result" style="display: none;">
+                <h4>Résultat:</h4>
+                <pre id="periodeResultContent"></pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Test du Filtrage par Locataire Actuel</h2>
+            <button class="btn-primary" onclick="testFiltrageLocataire()">Tester le filtrage</button>
+            <div id="filtrageResult" class="result" style="display: none;">
+                <h4>Résultat:</h4>
+                <pre id="filtrageResultContent"></pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Test des Messages "Aucune Donnée"</h2>
+            <button class="btn-primary" onclick="testMessagesVides()">Tester les messages</button>
+            <div id="messagesResult" class="result" style="display: none;">
+                <h4>Résultat:</h4>
+                <div id="messagesResultContent"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Test de Mise à Jour Dynamique</h2>
+            <div>
+                <label>Changer la période:</label>
+                <select id="periodeDynamique" class="filter-select">
+                    <option value="12">12 derniers mois</option>
+                    <option value="24">2 dernières années</option>
+                    <option value="60">5 dernières années</option>
+                </select>
+                <button class="btn-primary" onclick="testMiseAJourDynamique()">Tester la mise à jour</button>
+            </div>
+            <div id="dynamiqueResult" class="result" style="display: none;">
+                <h4>Résultat:</h4>
+                <pre id="dynamiqueResultContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données de test similaires à celles du fichier rapports.js
+        const testData = {
+            proprietaire: {
+                proprietes: [
+                    {
+                        nom: "Appartement T3 - Rue de la Paix",
+                        type: "appartement",
+                        loyer: 600,
+                        locataire: "Marie Dubois",
+                        paiements: {
+                            "janvier 2024": { paye: true, montant: 600 },
+                            "février 2024": { paye: false, montant: 600 },
+                            "mars 2024": { paye: false, montant: 600 },
+                            "avril 2024": { paye: false, montant: 600 },
+                            "mai 2024": { paye: true, montant: 600 },
+                            "juin 2024": { paye: true, montant: 600 },
+                            "juillet 2024": { paye: true, montant: 600 },
+                            "août 2024": { paye: true, montant: 600 },
+                            "septembre 2024": { paye: true, montant: 600 },
+                            "octobre 2024": { paye: true, montant: 600 },
+                            "novembre 2024": { paye: true, montant: 600 },
+                            "décembre 2024": { paye: true, montant: 600 }
+                        }
+                    },
+                    {
+                        nom: "Studio - Avenue des Champs",
+                        type: "studio",
+                        loyer: 450,
+                        locataire: "Pierre Martin",
+                        paiements: {
+                            "janvier 2024": { paye: true, montant: 450 },
+                            "février 2024": { paye: true, montant: 450 },
+                            "mars 2024": { paye: true, montant: 450 },
+                            "avril 2024": { paye: true, montant: 450 },
+                            "mai 2024": { paye: true, montant: 450 },
+                            "juin 2024": { paye: true, montant: 450 },
+                            "juillet 2024": { paye: true, montant: 450 },
+                            "août 2024": { paye: true, montant: 450 },
+                            "septembre 2024": { paye: true, montant: 450 },
+                            "octobre 2024": { paye: true, montant: 450 },
+                            "novembre 2024": { paye: true, montant: 450 },
+                            "décembre 2024": { paye: true, montant: 450 }
+                        }
+                    },
+                    {
+                        nom: "Maison T4 - Quartier Résidentiel",
+                        type: "maison",
+                        loyer: 800,
+                        locataire: "Inoccupé",
+                        paiements: {}
+                    }
+                ]
+            },
+            locataire: {
+                proprietes: [
+                    {
+                        nom: "Appartement T3 - Rue de la Paix",
+                        loyer: 600,
+                        actuellementLouee: true,
+                        paiements: {
+                            "janvier 2024": { paye: true, montant: 600 },
+                            "février 2024": { paye: true, montant: 600 },
+                            "mars 2024": { paye: false, montant: 600 },
+                            "avril 2024": { paye: false, montant: 600 },
+                            "mai 2024": { paye: true, montant: 600 },
+                            "juin 2024": { paye: true, montant: 600 },
+                            "juillet 2024": { paye: true, montant: 600 },
+                            "août 2024": { paye: true, montant: 600 },
+                            "septembre 2024": { paye: true, montant: 600 },
+                            "octobre 2024": { paye: true, montant: 600 },
+                            "novembre 2024": { paye: true, montant: 600 },
+                            "décembre 2024": { paye: true, montant: 600 }
+                        }
+                    },
+                    {
+                        nom: "Studio - Avenue des Champs",
+                        loyer: 450,
+                        actuellementLouee: false,
+                        paiements: {}
+                    }
+                ]
+            }
+        };
+
+        // Configuration des périodes
+        const PERIODES = {
+            12: { mois: 12, label: '12 derniers mois' },
+            24: { mois: 24, label: '2 dernières années' },
+            60: { mois: 60, label: '5 dernières années' }
+        };
+
+        // Fonction pour formater une date en "mois année"
+        function formatMonthYear(date) {
+            const options = { month: 'long', year: 'numeric' };
+            return date.toLocaleDateString('fr-FR', options);
+        }
+
+        // Fonction pour générer les mois selon la période
+        function getMoisLabels(periode = 12) {
+            const today = new Date();
+            const mois = [];
+            const nbMois = periode || 12;
+            
+            for (let i = nbMois - 1; i >= 0; i--) {
+                const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                mois.push(formatMonthYear(date));
+            }
+            
+            return mois;
+        }
+
+        // Fonction pour filtrer les propriétés par locataire actuel
+        function getProprietesAvecLocataireActuel() {
+            if (!testData.proprietaire || !testData.proprietaire.proprietes) {
+                return [];
+            }
+            
+            return testData.proprietaire.proprietes.filter(propriete => {
+                return propriete.locataire && propriete.locataire.trim() !== '' && 
+                       propriete.locataire.toLowerCase() !== 'inoccupé' &&
+                       propriete.locataire.toLowerCase() !== 'vacant';
+            });
+        }
+
+        // Fonction pour filtrer les propriétés du locataire actuel
+        function getProprietesLocataireActuel() {
+            if (!testData.locataire || !testData.locataire.proprietes) {
+                return [];
+            }
+            
+            return testData.locataire.proprietes.filter(propriete => {
+                return propriete.actuellementLouee !== false;
+            });
+        }
+
+        // Test 1: Fonctions de périodes
+        function testPeriode() {
+            const periode = parseInt(document.getElementById('periodeTest').value);
+            const mois = getMoisLabels(periode);
+            
+            const result = {
+                periode: periode,
+                label: PERIODES[periode]?.label,
+                nombreMois: mois.length,
+                premiersMois: mois.slice(0, 3),
+                derniersMois: mois.slice(-3),
+                tousLesMois: mois
+            };
+            
+            document.getElementById('periodeResultContent').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('periodeResult').style.display = 'block';
+        }
+
+        // Test 2: Filtrage par locataire actuel
+        function testFiltrageLocataire() {
+            const proprietesProprietaire = getProprietesAvecLocataireActuel();
+            const proprietesLocataire = getProprietesLocataireActuel();
+            
+            const result = {
+                proprietaire: {
+                    total: testData.proprietaire.proprietes.length,
+                    avecLocataire: proprietesProprietaire.length,
+                    proprietes: proprietesProprietaire.map(p => ({
+                        nom: p.nom,
+                        locataire: p.locataire,
+                        type: p.type
+                    }))
+                },
+                locataire: {
+                    total: testData.locataire.proprietes.length,
+                    actuellementLouees: proprietesLocataire.length,
+                    proprietes: proprietesLocataire.map(p => ({
+                        nom: p.nom,
+                        actuellementLouee: p.actuellementLouee
+                    }))
+                }
+            };
+            
+            document.getElementById('filtrageResultContent').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('filtrageResult').style.display = 'block';
+        }
+
+        // Test 3: Messages "Aucune Donnée"
+        function testMessagesVides() {
+            const proprietesVides = [];
+            const proprietesLocataireVides = [];
+            
+            // Simuler des données vides
+            const proprietesAvecLocataire = getProprietesAvecLocataireActuel();
+            const proprietesLocataire = getProprietesLocataireActuel();
+            
+            const result = {
+                proprietaire: {
+                    avecDonnees: proprietesAvecLocataire.length,
+                    message: proprietesAvecLocataire.length === 0 ? 
+                        '<div class="no-data-message"><i class="fas fa-info-circle"></i><h3>Aucune propriété occupée</h3><p>Aucune propriété n\'est actuellement louée pour la période sélectionnée.</p></div>' : 
+                        'Des données sont disponibles'
+                },
+                locataire: {
+                    avecDonnees: proprietesLocataire.length,
+                    message: proprietesLocataire.length === 0 ? 
+                        '<div class="no-data-message"><i class="fas fa-info-circle"></i><h3>Aucune propriété louée</h3><p>Vous n\'avez actuellement aucune propriété louée pour la période sélectionnée.</p></div>' : 
+                        'Des données sont disponibles'
+                }
+            };
+            
+            document.getElementById('messagesResultContent').innerHTML = `
+                <h4>Propriétaire:</h4>
+                <p>Propriétés avec locataire: ${result.proprietaire.avecDonnees}</p>
+                ${result.proprietaire.message}
+                
+                <h4>Locataire:</h4>
+                <p>Propriétés louées: ${result.locataire.avecDonnees}</p>
+                ${result.locataire.message}
+            `;
+            document.getElementById('messagesResult').style.display = 'block';
+        }
+
+        // Test 4: Mise à jour dynamique
+        function testMiseAJourDynamique() {
+            const periode = parseInt(document.getElementById('periodeDynamique').value);
+            const mois = getMoisLabels(periode);
+            const proprietes = getProprietesAvecLocataireActuel();
+            
+            // Simuler le calcul des revenus
+            const revenusMensuels = [];
+            mois.forEach(mois => {
+                let revenuMensuel = 0;
+                proprietes.forEach(propriete => {
+                    if (propriete.paiements && propriete.paiements[mois] && propriete.paiements[mois].paye) {
+                        revenuMensuel += propriete.paiements[mois].montant;
+                    }
+                });
+                revenusMensuels.push(revenuMensuel);
+            });
+            
+            const result = {
+                periode: periode,
+                label: PERIODES[periode]?.label,
+                proprietesAnalysees: proprietes.length,
+                nombreMois: mois.length,
+                revenusTotaux: revenusMensuels.reduce((a, b) => a + b, 0),
+                revenusMoyens: revenusMensuels.reduce((a, b) => a + b, 0) / mois.length,
+                premiersRevenus: revenusMensuels.slice(0, 3),
+                derniersRevenus: revenusMensuels.slice(-3)
+            };
+            
+            document.getElementById('dynamiqueResultContent').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('dynamiqueResult').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

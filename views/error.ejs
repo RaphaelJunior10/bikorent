@@ -1,0 +1,18 @@
+<div class="error-page">
+    <div class="error-content">
+        <div class="error-icon">
+            <i class="fas fa-bug"></i>
+        </div>
+        <h1>Erreur serveur</h1>
+        <h2>Une erreur s'est produite</h2>
+        <p>Nous nous excusons pour ce désagrément. Veuillez réessayer plus tard.</p>
+        <% if (locals.error && error.message) { %>
+            <div class="error-details">
+                <p><strong>Détails:</strong> <%= error.message %></p>
+            </div>
+        <% } %>
+        <a href="/" class="btn-primary">
+            <i class="fas fa-home"></i> Retour à l'accueil
+        </a>
+    </div>
+</div> 

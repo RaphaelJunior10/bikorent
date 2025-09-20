@@ -1,0 +1,209 @@
+<!-- Barre d'outils -->
+<div class="toolbar">
+    <div class="search-container">
+        <input type="text" id="searchLocataires" placeholder="Rechercher un locataire..." class="search-input">
+        <i class="fas fa-search search-icon"></i>
+    </div>
+    <div class="filter-container">
+        <select id="statusFilter" class="filter-select">
+            <option value="all">Tous les statuts</option>
+            <option value="current">Locataires actuels</option>
+            <option value="overdue">En retard de paiement</option>
+            <option value="upcoming">Paiement à venir</option>
+        </select>
+        <button class="btn-primary" id="addLocataireBtn">
+            <i class="fas fa-plus"></i> Nouveau Locataire
+        </button>
+    </div>
+</div>
+
+<!-- Statistiques rapides -->
+<div class="stats-cards">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Total Locataires</h3>
+            <p class="stat-number" id="totalLocataires">0</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <h3>À jour</h3>
+            <p class="stat-number" id="aJour">0</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-info">
+            <h3>En retard</h3>
+            <p class="stat-number" id="enRetard">0</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-euro-sign"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Montant dû</h3>
+            <p class="stat-number" id="montantDu">€0</p>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des locataires -->
+<div class="section">
+    <div class="section-header">
+        <h2><i class="fas fa-list"></i> Liste des Locataires</h2>
+        <div class="view-options">
+            <button class="view-btn active" data-view="grid">
+                <i class="fas fa-th"></i>
+            </button>
+            <button class="view-btn" data-view="list">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="locataires-container" id="locatairesContainer">
+        <!-- Les cartes de locataires seront générées dynamiquement ici -->
+    </div>
+</div>
+
+<!-- Modal pour les détails du locataire -->
+<div class="modal" id="locataireModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Détails du Locataire</h2>
+            <button class="close-btn" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Contenu du modal généré dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour ajouter un locataire -->
+<div class="modal" id="addLocataireModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Ajouter un Nouveau Locataire</h2>
+            <button class="close-btn" id="closeAddModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="addLocataireForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prenom">Prénom *</label>
+                        <input type="text" id="prenom" name="prenom" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nom">Nom *</label>
+                        <input type="text" id="nom" name="nom" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="telephone">Téléphone *</label>
+                        <input type="tel" id="telephone" name="telephone" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="propriete">Propriété *</label>
+                    <select id="propriete" name="propriete" required>
+                        <option value="">Sélectionner une propriété libre</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="loyer">Loyer mensuel (€) *</label>
+                        <input type="number" id="loyer" name="loyer" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dateEntree">Date d'entrée *</label>
+                        <input type="date" id="dateEntree" name="dateEntree" required>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Informations professionnelles (facultatif)</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="emploi">Emploi</label>
+                            <input type="text" id="emploi" name="emploi" placeholder="Ex: Ingénieur, Médecin...">
+                        </div>
+                        <div class="form-group">
+                            <label for="lieuTravail">Lieu de travail</label>
+                            <input type="text" id="lieuTravail" name="lieuTravail" placeholder="Ex: TechCorp, Hôpital Central...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Informations complémentaires (facultatif)</h4>
+                    <div class="form-group">
+                        <label for="adresse">Adresse</label>
+                        <input type="text" id="adresse" name="adresse" placeholder="Adresse complète">
+                    </div>
+                    <div class="form-group">
+                        <label for="bio">Biographie</label>
+                        <textarea id="bio" name="bio" rows="3" placeholder="Quelques mots sur le locataire..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelAdd">Annuler</button>
+                    <button type="submit" class="btn-primary">Créer le locataire</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de retrait -->
+<div class="modal" id="removeTenantModal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3>Confirmer le retrait</h3>
+            <button class="close-modal" id="closeRemoveTenantModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="removeTenantMessage">Êtes-vous sûr de vouloir retirer ce locataire de la propriété ?</p>
+            <p class="warning-text">Cette action libérera la propriété et le locataire ne sera plus associé à cette propriété.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="cancelRemoveTenant">Annuler</button>
+            <button class="btn-danger" id="confirmRemoveTenant">Retirer</button>
+        </div>
+    </div>
+</div>
+
+<!-- eslint-disable-next-line -->
+<script>
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line no-undef
+    window.locatairesData = <%- JSON.stringify(locatairesData) %>;
+    console.log('Données passées depuis le contrôleur:', window.locatairesData);
+</script>
+
+<script src="/js/locataires.js"></script> 

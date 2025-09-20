@@ -1,0 +1,299 @@
+<%- include('partials/sidebar') %>
+
+<div class="main-content">
+    <!-- En-tête de la page -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-info">
+                <h1><i class="fas fa-credit-card"></i> Effectuer un Paiement</h1>
+                <p>Réglez vos loyers en toute simplicité</p>
+            </div>
+            <div class="header-actions">
+                <a href="/paiements" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour aux Paiements
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <div class="payment-container">
+        <div class="payment-steps">
+            <!-- Étape 1: Sélection de la propriété et récapitulatif -->
+            <div class="step-section active" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <h2>Sélection de la Propriété</h2>
+                </div>
+                
+                <div class="step-content">
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="propertySelect">Propriété *</label>
+                            <select id="propertySelect" name="property" required>
+                                <option value="">Sélectionner une propriété</option>
+                                <% if (userProperties && userProperties.length > 0) { %>
+                                    <% userProperties.forEach((property, index) => { %>
+                                        <option value="<%= property.id %>" 
+                                                data-rent="<%= property.monthlyRent %>"
+                                                data-name="<%= property.name %>"
+                                                <%= index === 0 ? 'selected' : '' %>>
+                                            <%= property.name %> - €<%= property.monthlyRent %>/mois
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Récapitulatif des dettes -->
+                    <div class="debt-summary" id="debtSummary">
+                        <h3><i class="fas fa-calculator"></i> Récapitulatif de vos Dettes</h3>
+                        <div class="debt-card" id="debtCard">
+                            <div class="debt-info">
+                                <div class="debt-item">
+                                    <span class="label">Mois impayés:</span>
+                                    <span class="value" id="unpaidMonths">0</span>
+                                </div>
+                                <div class="debt-item">
+                                    <span class="label">Loyer mensuel:</span>
+                                    <span class="value" id="monthlyRent">€0</span>
+                                </div>
+                                <div class="debt-item total">
+                                    <span class="label">Total dû:</span>
+                                    <span class="value" id="totalDebt">€0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 2: Configuration du paiement -->
+            <div class="step-section" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <h2>Configuration du Paiement</h2>
+                </div>
+                
+                <div class="step-content">
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="paymentMethod">Méthode de paiement *</label>
+                            <select id="paymentMethod" name="paymentMethod" required>
+                                <option value="mobidyc" selected>Mobidyc</option>
+                                <option value="virement">Virement bancaire</option>
+                                <option value="cheque">Chèque</option>
+                                <option value="especes">Espèces</option>
+                                <option value="carte">Carte bancaire</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="monthsToPay">Nombre de mois à payer *</label>
+                            <input type="number" id="monthsToPay" name="monthsToPay" min="1" max="12" value="1" required>
+                            <small class="form-help">Vous pouvez payer entre 1 et 12 mois</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="totalAmount">Montant total</label>
+                            <div class="amount-display">
+                                <span class="currency">€</span>
+                                <span id="totalAmount" class="amount">0</span>
+                            </div>
+                            <small class="form-help">Calculé automatiquement: Loyer mensuel × Nombre de mois</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 3: Formulaire de paiement -->
+            <div class="step-section" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <h2>Finalisation du Paiement</h2>
+                </div>
+                
+                <div class="step-content">
+                    <!-- Formulaire Mobidyc (par défaut) -->
+                    <div class="payment-form" id="mobidycForm">
+                        <div class="payment-method-header">
+                            <i class="fas fa-mobile-alt"></i>
+                            <h3>Paiement via Mobidyc</h3>
+                            <p>Paiement sécurisé par mobile money</p>
+                        </div>
+                        
+                        <!-- Récapitulatif du paiement -->
+                        <div class="payment-summary">
+                            <div class="summary-item">
+                                <span class="label">Montant du loyer:</span>
+                                <span class="value" id="mobidycAmount">€0.00</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">Frais de service:</span>
+                                <span class="value" id="mobidycFees">€0.00</span>
+                            </div>
+                            <div class="summary-item total">
+                                <span class="label">Total à payer:</span>
+                                <span class="value" id="mobidycTotal">€0.00</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Formulaire de paiement -->
+                        <div class="mobidyc-form">
+                            <div class="form-group">
+                                <label for="mobidycNumber">Numéro de téléphone *</label>
+                                <div class="input-group">
+                                    <select id="mobidycProvider" name="provider" required>
+                                        <option value="">Sélectionner le fournisseur</option>
+                                        <option value="airtel">Airtel Money</option>
+                                        <option value="mobicash">Mobicash</option>
+                                        <option value="mobidyc">Mobidyc</option>
+                                    </select>
+                                    <input type="tel" id="mobidycNumber" name="phoneNumber" 
+                                           placeholder="Ex: 0123456789" maxlength="10" required>
+                                </div>
+                                <small class="form-help">Entrez votre numéro de téléphone mobile</small>
+                            </div>
+                            
+                            <!-- Informations de sécurité -->
+                            <div class="security-info">
+                                <div class="security-item">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Paiement sécurisé SSL</span>
+                                </div>
+                                <div class="security-item">
+                                    <i class="fas fa-lock"></i>
+                                    <span>Données chiffrées</span>
+                                </div>
+                                <div class="security-item">
+                                    <i class="fas fa-mobile-alt"></i>
+                                    <span>Confirmation SMS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire Virement bancaire -->
+                    <div class="payment-form" id="virementForm" style="display: none;">
+                        <div class="payment-method-header">
+                            <i class="fas fa-university"></i>
+                            <h3>Virement Bancaire</h3>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="bankName">Nom de la banque</label>
+                                <input type="text" id="bankName" name="bankName" placeholder="Ex: BNP Paribas">
+                            </div>
+                            <div class="form-group">
+                                <label for="iban">IBAN</label>
+                                <input type="text" id="iban" name="iban" placeholder="FR76 1234 5678 9012 3456 7890 123">
+                            </div>
+                            <div class="form-group">
+                                <label for="bic">BIC</label>
+                                <input type="text" id="bic" name="bic" placeholder="BNPAFRPP">
+                            </div>
+                            <div class="form-group">
+                                <label for="reference">Référence du virement</label>
+                                <input type="text" id="reference" name="reference" placeholder="Référence unique">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire Chèque -->
+                    <div class="payment-form" id="chequeForm" style="display: none;">
+                        <div class="payment-method-header">
+                            <i class="fas fa-file-invoice"></i>
+                            <h3>Paiement par Chèque</h3>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="chequeNumber">Numéro du chèque</label>
+                                <input type="text" id="chequeNumber" name="chequeNumber" placeholder="Numéro du chèque">
+                            </div>
+                            <div class="form-group">
+                                <label for="chequeDate">Date du chèque</label>
+                                <input type="date" id="chequeDate" name="chequeDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="chequeBank">Banque émettrice</label>
+                                <input type="text" id="chequeBank" name="chequeBank" placeholder="Nom de la banque">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire Espèces -->
+                    <div class="payment-form" id="especesForm" style="display: none;">
+                        <div class="payment-method-header">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <h3>Paiement en Espèces</h3>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="deliveryDate">Date de remise</label>
+                                <input type="date" id="deliveryDate" name="deliveryDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="deliveryLocation">Lieu de remise</label>
+                                <input type="text" id="deliveryLocation" name="deliveryLocation" placeholder="Adresse de remise">
+                            </div>
+                            <div class="form-group">
+                                <label for="deliveryPerson">Personne de contact</label>
+                                <input type="text" id="deliveryPerson" name="deliveryPerson" placeholder="Nom de la personne">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire Carte bancaire -->
+                    <div class="payment-form" id="carteForm" style="display: none;">
+                        <div class="payment-method-header">
+                            <i class="fas fa-credit-card"></i>
+                            <h3>Paiement par Carte Bancaire</h3>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="cardNumber">Numéro de carte</label>
+                                <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expiryDate">Date d'expiration</label>
+                                    <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/AA" maxlength="5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cvv">CVV</label>
+                                    <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="3">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="cardName">Nom sur la carte</label>
+                                <input type="text" id="cardName" name="cardName" placeholder="Nom du titulaire">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="payment-actions">
+            <button type="button" class="btn-secondary" id="prevStep" style="display: none;">
+                <i class="fas fa-arrow-left"></i> Précédent
+            </button>
+            <button type="button" class="btn-primary" id="nextStep">
+                Suivant <i class="fas fa-arrow-right"></i>
+            </button>
+            <button type="button" class="btn-success" id="confirmPayment" style="display: none;">
+                <i class="fas fa-check"></i> Confirmer le Paiement
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Données pour JavaScript -->
+<script>
+    window.userProperties = <%- JSON.stringify(userProperties) %>;
+    window.userDebts = <%- JSON.stringify(userDebts) %>;
+</script>
+
+<script src="/js/paiement.js"></script>

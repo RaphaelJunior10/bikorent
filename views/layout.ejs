@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= locals.title || 'BikoRent' %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <% if (locals.extraCSS) { %>
+        <% extraCSS.forEach(css => { %>
+            <link rel="stylesheet" href="<%= css %>">
+        <% }); %>
+    <% } %>
+</head>
+<body>
+    <!-- Menu latéral -->
+    <%- include('partials/sidebar') %>
+
+    <!-- Contenu principal -->
+    <main class="main-content">
+        <!-- Header avec bouton menu -->
+        <header class="top-header">
+            <button class="menu-btn" id="menuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="header-content">
+                <h1><%= locals.pageTitle || 'BikoRent' %></h1>
+                <div class="user-info">
+                    <span>Bienvenue, <%= locals.user ? locals.user.name : 'Utilisateur' %></span>
+                    <i class="fas fa-user-circle"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenu de la page -->
+        <%- body %>
+    </main>
+
+    <!-- Scripts -->
+    <script src="/js/sidebar.js"></script>
+    <% if (locals.extraScripts) { %>
+        <% extraScripts.forEach(script => { %>
+            <script src="<%= script %>"></script>
+        <% }); %>
+    <% } %>
+    <% if (locals.pageScript) { %>
+        <script src="<%= pageScript %>"></script>
+    <% } %>
+</body>
+</html> 

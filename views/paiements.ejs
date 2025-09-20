@@ -1,0 +1,399 @@
+<!-- Système d'onglets -->
+<div class="tabs-container">
+    <div class="tabs-header">
+        <button class="tab-btn active" data-tab="proprietaire">
+            <i class="fas fa-user-tie"></i> Propriétaire
+        </button>
+        <button class="tab-btn" data-tab="locataire">
+            <i class="fas fa-user"></i> Locataire
+        </button>
+    </div>
+
+    <!-- Onglet Propriétaire -->
+    <div class="tab-content active" id="proprietaire">
+        <!-- Barre d'outils -->
+        <div class="toolbar">
+            <div class="search-container">
+                <input type="text" id="searchPaiements" placeholder="Rechercher un paiement..." class="search-input">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="filter-container">
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">Tous les statuts</option>
+                    <option value="paid">Payés</option>
+                    <!--<option value="pending">En attente</option>
+                    <option value="overdue">En retard</option>-->
+                </select>
+                <select id="monthFilter" class="filter-select">
+                    <option value="all">Tous les mois</option>
+                    <option value="current">Mois en cours</option>
+                    <option value="last">Mois dernier</option>
+                </select>
+                <button class="btn-primary" id="addPaiementBtn">
+                    <i class="fas fa-plus"></i> Paiement en espèces
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistiques rapides -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Reçu</h3>
+                    <p class="stat-number" id="totalRecu">€0</p>
+                </div>
+            </div>
+            <!--<div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>En Attente</h3>
+                    <p class="stat-number" id="enAttente">€0</p>
+                </div>
+            </div>-->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>En Retard</h3>
+                    <p class="stat-number" id="enRetard">€0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Taux Recouvrement</h3>
+                    <p class="stat-number" id="tauxRecouvrement">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Locataires en retard -->
+        <div class="section" id="locatairesEnRetardSection">
+            <div class="section-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Locataires en Retard</h2>
+            </div>
+            <div class="retard-container" id="locatairesEnRetardContainer">
+                <!-- Le contenu sera généré dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Liste des paiements -->
+        <div class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Historique des Paiements</h2>
+                <div class="view-options">
+                    <button class="view-btn active" data-view="table">
+                        <i class="fas fa-table"></i>
+                    </button>
+                    <button class="view-btn" data-view="cards">
+                        <i class="fas fa-th"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="paiements-container" id="paiementsContainer">
+                <!-- Le contenu sera généré dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Calendrier de paiement -->
+        <div class="section">
+            <h2><i class="fas fa-calendar-alt"></i> Calendrier de Paiement</h2>
+            <div class="calendar-container">
+                <div class="calendar-grid" id="proprietairePaiementsCalendar">
+                    <!-- Données générées par JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglet Locataire -->
+    <div class="tab-content" id="locataire">
+        <!-- Barre d'outils -->
+        <div class="toolbar">
+            <div class="search-container">
+                <input type="text" id="searchMesPaiements" placeholder="Rechercher un paiement..." class="search-input">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="filter-container">
+                <select id="statusFilterLocataire" class="filter-select">
+                    <option value="all">Tous les statuts</option>
+                    <option value="paid">Payés</option>
+                    <!--<option value="pending">En attente</option>
+                    <option value="overdue">En retard</option>-->
+                </select>
+                <button class="btn-primary" id="effectuerPaiementBtn">
+                    <i class="fas fa-credit-card"></i> Effectuer un Paiement
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistiques rapides -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Payé</h3>
+                    <p class="stat-number" id="totalPaye">€0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Dû</h3>
+                    <p class="stat-number" id="montantDu">€0</p>
+                </div>
+            </div>
+            <!--<div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Prochain Paiement</h3>
+                    <p class="stat-number" id="prochainPaiement">€0</p>
+                </div>
+            </div>-->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>À Jour</h3>
+                    <p class="stat-number" id="aJour">Oui</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Retard de paiement -->
+        <div class="section" id="retardPaiementSection">
+            <div class="section-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Retard de Paiement</h2>
+            </div>
+            <div class="retard-container" id="retardPaiementContainer">
+                <!-- Le contenu sera généré dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Liste des paiements -->
+        <div class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Mes Paiements</h2>
+                <div class="view-options">
+                    <button class="view-btn active" data-view="table">
+                        <i class="fas fa-table"></i>
+                    </button>
+                    <button class="view-btn" data-view="cards">
+                        <i class="fas fa-th"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="paiements-container" id="mesPaiementsContainer">
+                <!-- Le contenu sera généré dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Calendrier de paiement -->
+        <div class="section">
+            <h2><i class="fas fa-calendar-alt"></i> Mon Calendrier de Paiement</h2>
+            <div class="calendar-container">
+                <div class="calendar-grid" id="locatairePaiementsCalendar">
+                    <!-- Données générées par JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour ajouter un paiement -->
+<div class="modal" id="addPaiementModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Enregistrer un Paiement</h2>
+            <button class="close-btn" id="closeAddModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="addPaiementForm">
+                <div class="form-group">
+                    <label for="locataire">Locataire *</label>
+                    <select id="locataire" name="locataire" required>
+                        <option value="">Sélectionner un locataire</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="montant">Montant (€) *</label>
+                    <input type="number" id="montant" name="montant" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="datePaiement">Date de paiement *</label>
+                    <input type="date" id="datePaiement" name="datePaiement" required>
+                </div>
+                <div class="form-group">
+                    <label for="mois">Mois concerné *</label>
+                    <select id="mois" name="mois" required>
+                        <option value="">Sélectionner un mois</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="methode">Méthode de paiement</label>
+                    <select id="methode" name="methode">
+                        <option value="virement">Virement bancaire</option>
+                        <option value="cheque">Chèque</option>
+                        <option value="especes">Espèces</option>
+                        <option value="carte">Carte bancaire</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="commentaire">Commentaire</label>
+                    <textarea id="commentaire" name="commentaire" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelAdd">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour effectuer un paiement (locataire) -->
+<div class="modal" id="effectuerPaiementModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Effectuer un Paiement</h2>
+            <button class="close-btn" id="closeEffectuerModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="effectuerPaiementForm">
+                <div class="form-group">
+                    <label for="proprietePaiement">Propriété *</label>
+                    <select id="proprietePaiement" name="propriete" required>
+                        <option value="">Sélectionner une propriété</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="montantPaiement">Montant (€) *</label>
+                    <input type="number" id="montantPaiement" name="montant" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="datePaiementLocataire">Date de paiement *</label>
+                    <input type="date" id="datePaiementLocataire" name="datePaiement" required>
+                </div>
+                <div class="form-group">
+                    <label for="moisPaiement">Mois concerné *</label>
+                    <select id="moisPaiement" name="mois" required>
+                        <option value="">Sélectionner un mois</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="methodePaiement">Méthode de paiement</label>
+                    <select id="methodePaiement" name="methode">
+                        <option value="virement">Virement bancaire</option>
+                        <option value="cheque">Chèque</option>
+                        <option value="especes">Espèces</option>
+                        <option value="carte">Carte bancaire</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelEffectuer">Annuler</button>
+                    <button type="submit" class="btn-primary">Effectuer le paiement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour les détails du paiement -->
+<div class="modal" id="paiementDetailsModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="paiementDetailsTitle">Détails du Paiement</h3>
+            <button class="close-modal" id="closePaiementDetailsModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="paiementDetailsBody">
+            <!-- Contenu du modal généré dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip pour le calendrier -->
+<div class="tooltip" id="calendarTooltip"></div>
+
+<!-- Modal pour le paiement en espèces -->
+<div class="modal" id="especesPaiementModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3>Paiement en espèces</h3>
+            <button class="close-modal" id="closeEspecesModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="especesPaiementForm">
+                <div class="form-section">
+                    <h4>Sélection de la propriété</h4>
+                    <div class="form-group">
+                        <label for="proprieteEspeces">Propriété concernée *</label>
+                        <select id="proprieteEspeces" name="propriete" required>
+                            <option value="">Sélectionner une propriété</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="propriete-info-section" id="proprieteInfoSection" style="display: none;">
+                    <!-- Les informations de la propriété seront affichées ici -->
+                </div>
+
+                <div class="form-section">
+                    <h4>Détails du paiement</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="moisEspeces">Nombre de mois *</label>
+                            <input type="number" id="moisEspeces" name="mois" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dateEspeces">Date de réception *</label>
+                            <input type="date" id="dateEspeces" name="date" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="commentaireEspeces">Commentaire (optionnel)</label>
+                        <textarea id="commentaireEspeces" name="commentaire" rows="3" placeholder="Ajouter un commentaire..."></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="cancelEspeces">Annuler</button>
+            <button type="button" class="btn-primary" id="confirmEspeces">Valider le paiement</button>
+        </div>
+    </div>
+</div>
+
+<!-- eslint-disable-next-line -->
+<script>
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line no-undef
+    window.paiementsData = <%- JSON.stringify(paiementsData) %>;
+</script>
+
+<script src="/js/paiements.js?v=<%= Date.now() %>"></script> 

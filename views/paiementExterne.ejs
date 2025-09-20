@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .external-payment-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .simple-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 15px 0;
+            margin-bottom: 0;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .simple-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .simple-header h1 i {
+            margin-right: 10px;
+        }
+        
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .home-link:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .external-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .external-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .external-header p {
+            margin: 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .property-info {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .property-info h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .property-details-horizontal {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #007bff;
+            flex: 1;
+            min-width: 150px;
+            font-size: 0.9rem;
+        }
+        
+        .detail-item i {
+            font-size: 1.2rem;
+            color: #007bff;
+            width: 1.5rem;
+            text-align: center;
+        }
+        
+        .detail-item span {
+            color: #333;
+            font-size: 0.95rem;
+        }
+        
+        .detail-content h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 1rem;
+        }
+        
+        .detail-content p {
+            margin: 0;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .payment-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .payment-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .payment-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .payment-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .history-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .history-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .payment-history {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .payment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .payment-item.pending {
+            border-left-color: #ffc107;
+        }
+        
+        .payment-item.overdue {
+            border-left-color: #dc3545;
+        }
+        
+        .payment-info h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        
+        .payment-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .payment-amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #28a745;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Styles pour les formulaires de paiement dynamiques */
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-help {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .amount-display {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: #f3f4f6;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .currency {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #374151;
+            margin-right: 0.5rem;
+        }
+        
+        .amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #059669;
+        }
+        
+        .payment-form {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .payment-method-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .payment-method-header i {
+            font-size: 2rem;
+            color: #3b82f6;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-method-header h3 {
+            margin: 0.5rem 0;
+            color: #1f2937;
+            font-size: 1.25rem;
+        }
+        
+        .payment-method-header p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .payment-summary {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        
+        .summary-item.total {
+            border-top: 1px solid #e5e7eb;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .summary-item .label {
+            color: #374151;
+        }
+        
+        .summary-item .value {
+            color: #059669;
+            font-weight: 600;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .input-group select {
+            flex: 0 0 150px;
+        }
+        
+        .input-group input {
+            flex: 1;
+        }
+        
+        .security-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+        }
+        
+        .security-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .security-item i {
+            color: #0ea5e9;
+            margin-bottom: 0.25rem;
+        }
+        
+        .security-item span {
+            font-size: 0.75rem;
+            color: #0369a1;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        /* Styles pour le modal de confirmation */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.7);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .modal-header h3 i {
+            color: #3b82f6;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .confirmation-message {
+            margin: 0 0 1rem 0;
+            color: #374151;
+            font-size: 1rem;
+        }
+        
+        .confirmation-details {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .detail-value {
+            color: #059669;
+            font-weight: 600;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .modal-footer .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .modal-footer .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .modal-footer .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .modal-footer .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .modal-footer .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        /* Styles pour les boutons en loading */
+        .btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .btn.loading i.fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Notifications - Style cohérent avec l'application */
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 3000;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            max-width: 400px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-success {
+            border-left: 4px solid #10b981;
+        }
+
+        .notification-success i {
+            color: #10b981;
+        }
+
+        .notification-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .notification-error i {
+            color: #ef4444;
+        }
+
+        .notification-warning {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .notification-warning i {
+            color: #f59e0b;
+        }
+
+        .notification-info {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .notification-info i {
+            color: #3b82f6;
+        }
+
+        .notification i {
+            font-size: 1.25rem;
+        }
+        
+        
+        @media (max-width: 768px) {
+            .external-payment-container {
+                padding: 15px;
+            }
+            
+            .simple-header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .home-link {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+            
+            .external-header h1 {
+                font-size: 2rem;
+            }
+            
+            .external-header {
+                padding: 20px;
+            }
+            
+            .property-details-horizontal {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .detail-item {
+                min-width: 120px;
+                font-size: 0.85rem;
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .payment-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .payment-actions {
+                flex-direction: column;
+            }
+            
+            .notification {
+                right: 1rem;
+                left: 1rem;
+                transform: translateY(-100%);
+            }
+            
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="external-payment-container">
+        <!-- En-tête avec navigation -->
+        <div class="simple-header">
+            <div class="header-content">
+                <h1><i class="fas fa-home"></i> BikoRent</h1>
+                <a href="/" class="home-link">
+                    <i class="fas fa-arrow-left"></i> Retour à l'accueil
+                </a>
+            </div>
+        </div>
+
+        <!-- En-tête de la page -->
+        <div class="external-header">
+            <h1><i class="fas fa-credit-card"></i> Paiement Externe</h1>
+            <p>Effectuez votre paiement de loyer en toute sécurité</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <%= error %>
+            </div>
+        <% } %>
+
+        <% if (property) { %>
+            <!-- Informations de la propriété -->
+            <div class="property-info">
+                <h2><i class="fas fa-home"></i> Informations de la propriété</h2>
+                <div class="property-details-horizontal">
+                    <div class="detail-item">
+                        <i class="fas fa-building"></i>
+                        <span><strong>Propriété:</strong> <%= property.name %></span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-euro-sign"></i>
+                        <span><strong>Loyer mensuel:</strong> €<%= property.monthlyRent %></span>
+                    </div>
+                    <% if (property.tenant) { %>
+                    <div class="detail-item">
+                        <i class="fas fa-user"></i>
+                        <span><strong>Locataire:</strong> <%= property.tenant.name %></span>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Section de paiement -->
+            <div class="payment-section">
+                <h2><i class="fas fa-credit-card"></i> Effectuer un paiement</h2>
+                
+                <!-- Configuration du paiement -->
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="months">Nombre de mois à payer *</label>
+                        <input type="number" id="months" name="months" min="1" max="12" value="1" required>
+                        <small class="form-help">Vous pouvez payer entre 1 et 12 mois</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="totalAmount">Montant total</label>
+                        <div class="amount-display">
+                            <span class="currency">€</span>
+                            <span id="totalAmount" class="amount">0</span>
+                        </div>
+                        <small class="form-help">Calculé automatiquement: Loyer mensuel × Nombre de mois</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="method">Méthode de paiement *</label>
+                        <select id="method" name="method" required>
+                            <option value="mobidyc" selected>Mobidyc</option>
+                            <option value="virement">Virement bancaire</option>
+                            <option value="cheque">Chèque</option>
+                            <option value="especes">Espèces</option>
+                            <option value="carte">Carte bancaire</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Formulaires de paiement dynamiques -->
+                <!-- Formulaire Mobidyc (par défaut) -->
+                <div class="payment-form" id="mobidycForm">
+                    <div class="payment-method-header">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h3>Paiement via Mobidyc</h3>
+                        <p>Paiement sécurisé par mobile money</p>
+                    </div>
+                    
+                    <!-- Récapitulatif du paiement -->
+                    <div class="payment-summary">
+                        <div class="summary-item">
+                            <span class="label">Montant du loyer:</span>
+                            <span class="value" id="mobidycAmount">€0.00</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Frais de service:</span>
+                            <span class="value" id="mobidycFees">€0.00</span>
+                        </div>
+                        <div class="summary-item total">
+                            <span class="label">Total à payer:</span>
+                            <span class="value" id="mobidycTotal">€0.00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulaire de paiement -->
+                    <div class="mobidyc-form">
+                        <div class="form-group">
+                            <label for="mobidycNumber">Numéro de téléphone *</label>
+                            <div class="input-group">
+                                <select id="mobidycProvider" name="provider" required>
+                                    <option value="">Sélectionner le fournisseur</option>
+                                    <option value="airtel">Airtel Money</option>
+                                    <option value="mobicash">Mobicash</option>
+                                    <option value="mobidyc">Mobidyc</option>
+                                </select>
+                                <input type="tel" id="mobidycNumber" name="phoneNumber" 
+                                       placeholder="Ex: 0123456789" maxlength="10" required>
+                            </div>
+                            <small class="form-help">Entrez votre numéro de téléphone mobile</small>
+                        </div>
+                        
+                        <!-- Informations de sécurité -->
+                        <div class="security-info">
+                            <div class="security-item">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Paiement sécurisé SSL</span>
+                            </div>
+                            <div class="security-item">
+                                <i class="fas fa-lock"></i>
+                                <span>Données chiffrées</span>
+                            </div>
+                            <div class="security-item">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Confirmation SMS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulaire Virement bancaire -->
+                <div class="payment-form" id="virementForm" style="display: none;">
+                    <div class="payment-method-header">
+                        <i class="fas fa-university"></i>
+                        <h3>Virement Bancaire</h3>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="bankName">Nom de la banque</label>
+                            <input type="text" id="bankName" name="bankName" placeholder="Ex: BNP Paribas">
+                        </div>
+                        <div class="form-group">
+                            <label for="iban">IBAN</label>
+                            <input type="text" id="iban" name="iban" placeholder="FR76 1234 5678 9012 3456 7890 123">
+                        </div>
+                        <div class="form-group">
+                            <label for="bic">BIC</label>
+                            <input type="text" id="bic" name="bic" placeholder="BNPAFRPP">
+                        </div>
+                        <div class="form-group">
+                            <label for="reference">Référence du virement</label>
+                            <input type="text" id="reference" name="reference" placeholder="Référence unique">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulaire Chèque -->
+                <div class="payment-form" id="chequeForm" style="display: none;">
+                    <div class="payment-method-header">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>Paiement par Chèque</h3>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="chequeNumber">Numéro du chèque</label>
+                            <input type="text" id="chequeNumber" name="chequeNumber" placeholder="Numéro du chèque">
+                        </div>
+                        <div class="form-group">
+                            <label for="chequeDate">Date du chèque</label>
+                            <input type="date" id="chequeDate" name="chequeDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="chequeBank">Banque émettrice</label>
+                            <input type="text" id="chequeBank" name="chequeBank" placeholder="Nom de la banque">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulaire Espèces -->
+                <div class="payment-form" id="especesForm" style="display: none;">
+                    <div class="payment-method-header">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>Paiement en Espèces</h3>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="deliveryDate">Date de remise</label>
+                            <input type="date" id="deliveryDate" name="deliveryDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryLocation">Lieu de remise</label>
+                            <input type="text" id="deliveryLocation" name="deliveryLocation" placeholder="Adresse de remise">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryPerson">Personne de contact</label>
+                            <input type="text" id="deliveryPerson" name="deliveryPerson" placeholder="Nom de la personne">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulaire Carte bancaire -->
+                <div class="payment-form" id="carteForm" style="display: none;">
+                    <div class="payment-method-header">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>Paiement par Carte Bancaire</h3>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="cardNumber">Numéro de carte</label>
+                            <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expiryDate">Date d'expiration</label>
+                                <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/AA" maxlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="cvv">CVV</label>
+                                <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="3">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardName">Nom sur la carte</label>
+                            <input type="text" id="cardName" name="cardName" placeholder="Nom du titulaire">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commentaire -->
+                <div class="form-group">
+                    <label for="commentaire">Commentaire (optionnel)</label>
+                    <textarea id="commentaire" name="commentaire" placeholder="Ajoutez un commentaire..."></textarea>
+                </div>
+                
+                <div class="payment-actions">
+                    <button type="button" id="submitPaymentBtn" class="btn btn-primary">
+                        <i class="fas fa-credit-card"></i> Confirmer le paiement
+                    </button>
+                </div>
+                
+            </div>
+
+        <% } else { %>
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                Propriété non trouvée ou inaccessible.
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Variables globales
+        const propertyId = '<%= property ? property.id : "" %>';
+        const monthlyRent = <%= property ? property.monthlyRent : 0 %>;
+        const propertyName = '<%= property ? property.name : "" %>';
+
+
+        // Calculer le montant automatiquement
+        function calculateAmount() {
+            const months = parseInt(document.getElementById('months').value);
+            if (months && monthlyRent) {
+                const total = months * monthlyRent;
+                document.getElementById('totalAmount').textContent = total.toFixed(2);
+                
+                // Mettre à jour le récapitulatif Mobidyc
+                document.getElementById('mobidycAmount').textContent = `€${total.toFixed(2)}`;
+                document.getElementById('mobidycFees').textContent = '€0.00';
+                document.getElementById('mobidycTotal').textContent = `€${total.toFixed(2)}`;
+            }
+        }
+
+        // Gérer le changement de méthode de paiement
+        function handlePaymentMethodChange() {
+            const method = document.getElementById('method').value;
+            
+            // Masquer tous les formulaires
+            document.querySelectorAll('.payment-form').forEach(form => {
+                form.style.display = 'none';
+            });
+            
+            // Afficher le formulaire correspondant
+            const formId = method + 'Form';
+            const form = document.getElementById(formId);
+            if (form) {
+                form.style.display = 'block';
+            }
+        }
+
+        // Événements
+        document.getElementById('months').addEventListener('input', calculateAmount);
+        document.getElementById('method').addEventListener('change', handlePaymentMethodChange);
+
+        // Initialiser
+        calculateAmount();
+        handlePaymentMethodChange();
+
+        // Fonction pour traiter le paiement
+        function processPayment() {
+            const months = parseInt(document.getElementById('months').value);
+            const method = document.getElementById('method').value;
+            const commentaire = document.getElementById('commentaire').value;
+
+            // Désactiver le bouton principal et afficher le loading
+            const submitBtn = document.getElementById('submitPaymentBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement en cours...';
+            submitBtn.classList.add('loading');
+
+            // Désactiver le bouton de confirmation dans le modal et afficher le loading
+            const confirmBtn = document.getElementById('confirmButton');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement...';
+                confirmBtn.classList.add('loading');
+            }
+
+            // Date d'aujourd'hui
+            const today = new Date().toISOString().split('T')[0];
+
+            // Collecter les données spécifiques à la méthode
+            let paymentData = {
+                propertyId: propertyId,
+                months: months,
+                date: today,
+                method: method,
+                commentaire: commentaire || '',
+                isExternalPayment: true
+            };
+
+            // Ajouter les données spécifiques selon la méthode
+            if (method === 'mobidyc') {
+                paymentData.data = {
+                    provider: document.getElementById('mobidycProvider').value,
+                    phoneNumber: document.getElementById('mobidycNumber').value
+                };
+            } else if (method === 'virement') {
+                paymentData.data = {
+                    bankName: document.getElementById('bankName').value,
+                    iban: document.getElementById('iban').value,
+                    bic: document.getElementById('bic').value,
+                    reference: document.getElementById('reference').value
+                };
+            } else if (method === 'cheque') {
+                paymentData.data = {
+                    chequeNumber: document.getElementById('chequeNumber').value,
+                    chequeDate: document.getElementById('chequeDate').value,
+                    chequeBank: document.getElementById('chequeBank').value
+                };
+            } else if (method === 'especes') {
+                paymentData.data = {
+                    deliveryDate: document.getElementById('deliveryDate').value,
+                    deliveryLocation: document.getElementById('deliveryLocation').value,
+                    deliveryPerson: document.getElementById('deliveryPerson').value
+                };
+            } else if (method === 'carte') {
+                paymentData.data = {
+                    cardNumber: document.getElementById('cardNumber').value,
+                    expiryDate: document.getElementById('expiryDate').value,
+                    cvv: document.getElementById('cvv').value,
+                    cardName: document.getElementById('cardName').value
+                };
+            }
+            console.log('paymentData', paymentData);
+            //return;
+            // Envoyer la requête au même backend que les autres paiements
+            fetch('/paiements/process-especes-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Afficher le message de succès
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'success-message';
+                    successDiv.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        ${data.message} - Montant: €${data.amount}
+                    `;
+                    document.querySelector('.payment-section').insertBefore(successDiv, document.querySelector('.payment-form'));
+                    
+                    // Réinitialiser les champs
+                    document.getElementById('months').value = 1;
+                    document.getElementById('commentaire').value = '';
+                    calculateAmount();
+                    
+                    // Recharger la page après 3 secondes
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    showNotification('Erreur: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showNotification('Erreur lors du traitement du paiement. Veuillez réessayer.', 'error');
+            })
+            .finally(() => {
+                // Réactiver le bouton principal
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-credit-card"></i> Confirmer le paiement';
+                submitBtn.classList.remove('loading');
+
+                // Réactiver le bouton de confirmation dans le modal
+                const confirmBtn = document.getElementById('confirmButton');
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '<i class="fas fa-check"></i> Valider';
+                    confirmBtn.classList.remove('loading');
+                }
+            });
+        }
+
+        // Fonction pour afficher les notifications (style cohérent avec l'application)
+        function showNotification(message, type = 'error') {
+            // Supprimer les notifications existantes
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+            
+            // Créer la notification
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas ${getNotificationIcon(type)}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            // Ajouter au DOM
+            document.body.appendChild(notification);
+            
+            // Afficher la notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Masquer et supprimer après 5 secondes
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Fonction pour obtenir l'icône selon le type de notification
+        function getNotificationIcon(type) {
+            switch(type) {
+                case 'success': return 'fa-check-circle';
+                case 'error': return 'fa-exclamation-circle';
+                case 'warning': return 'fa-exclamation-triangle';
+                case 'info': return 'fa-info-circle';
+                default: return 'fa-exclamation-circle';
+            }
+        }
+
+        // Soumettre le paiement
+        document.getElementById('submitPaymentBtn').addEventListener('click', function() {
+            const months = parseInt(document.getElementById('months').value);
+            const method = document.getElementById('method').value;
+            const commentaire = document.getElementById('commentaire').value;
+            
+            // Validation des champs obligatoires
+            if (!months || months < 1 || months > 12) {
+                showNotification('Veuillez entrer un nombre de mois valide (entre 1 et 12)', 'error');
+                return;
+            }
+
+            if (!method) {
+                showNotification('Veuillez sélectionner une méthode de paiement', 'error');
+                return;
+            }
+
+            // Validation spécifique selon la méthode
+            if (method === 'mobidyc') {
+                const provider = document.getElementById('mobidycProvider').value;
+                const phoneNumber = document.getElementById('mobidycNumber').value;
+                
+                if (!provider) {
+                    showNotification('Veuillez sélectionner un fournisseur de mobile money', 'error');
+                    return;
+                }
+                
+                if (!phoneNumber || phoneNumber.length < 9) {
+                    showNotification('Veuillez entrer un numéro de téléphone valide (minimum 9 chiffres)', 'error');
+                    return;
+                }
+            } else if (method === 'virement') {
+                const bankName = document.getElementById('bankName').value;
+                const iban = document.getElementById('iban').value;
+                
+                if (!bankName || bankName.trim().length < 2) {
+                    showNotification('Veuillez entrer le nom de votre banque', 'error');
+                    return;
+                }
+                
+                if (!iban || iban.trim().length < 10) {
+                    showNotification('Veuillez entrer un IBAN valide', 'error');
+                    return;
+                }
+            } else if (method === 'cheque') {
+                const chequeNumber = document.getElementById('chequeNumber').value;
+                const chequeDate = document.getElementById('chequeDate').value;
+                
+                if (!chequeNumber || chequeNumber.trim().length < 3) {
+                    showNotification('Veuillez entrer le numéro du chèque', 'error');
+                    return;
+                }
+                
+                if (!chequeDate) {
+                    showNotification('Veuillez entrer la date du chèque', 'error');
+                    return;
+                }
+            } else if (method === 'especes') {
+                const deliveryDate = document.getElementById('deliveryDate').value;
+                const deliveryLocation = document.getElementById('deliveryLocation').value;
+                
+                if (!deliveryDate) {
+                    showNotification('Veuillez entrer la date de remise des espèces', 'error');
+                    return;
+                }
+                
+                if (!deliveryLocation || deliveryLocation.trim().length < 5) {
+                    showNotification('Veuillez entrer le lieu de remise des espèces', 'error');
+                    return;
+                }
+            } else if (method === 'carte') {
+                const cardNumber = document.getElementById('cardNumber').value;
+                const expiryDate = document.getElementById('expiryDate').value;
+                const cvv = document.getElementById('cvv').value;
+                const cardName = document.getElementById('cardName').value;
+                
+                if (!cardNumber || cardNumber.replace(/\s/g, '').length < 13) {
+                    showNotification('Veuillez entrer un numéro de carte valide', 'error');
+                    return;
+                }
+                
+                if (!expiryDate || expiryDate.length !== 5) {
+                    showNotification('Veuillez entrer une date d\'expiration valide (MM/AA)', 'error');
+                    return;
+                }
+                
+                if (!cvv || cvv.length < 3) {
+                    showNotification('Veuillez entrer le code CVV de votre carte', 'error');
+                    return;
+                }
+                
+                if (!cardName || cardName.trim().length < 2) {
+                    showNotification('Veuillez entrer le nom du titulaire de la carte', 'error');
+                    return;
+                }
+            }
+
+            // Confirmation avec modal personnalisé
+            const total = months * monthlyRent;
+            showConfirmationModal({
+                title: 'Confirmer le paiement',
+                message: `Êtes-vous sûr de vouloir effectuer ce paiement ?`,
+                details: {
+                    'Propriété': propertyName,
+                    'Méthode': method,
+                    'Nombre de mois': months,
+                    'Montant total': `€${total.toFixed(2)}`
+                },
+                onConfirm: () => {
+                    processPayment();
+                }
+            });
+        });
+
+        // Fonction pour afficher le modal de confirmation
+        function showConfirmationModal({ title, message, details, onConfirm }) {
+            // Créer le modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content confirmation-modal">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-question-circle"></i> ${title}</h3>
+                        <button type="button" class="close-btn" onclick="closeConfirmationModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="confirmation-message">${message}</p>
+                        <div class="confirmation-details">
+                            ${Object.entries(details).map(([key, value]) => `
+                                <div class="detail-row">
+                                    <span class="detail-label">${key}:</span>
+                                    <span class="detail-value">${value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeConfirmationModal()">
+                            <i class="fas fa-times"></i> Annuler
+                        </button>
+                        <button type="button" class="btn btn-primary" id="confirmButton">
+                            <i class="fas fa-check"></i> Valider
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Afficher le modal
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
+            
+            // Gérer la confirmation
+            document.getElementById('confirmButton').addEventListener('click', () => {
+                closeConfirmationModal();
+                onConfirm();
+            });
+            
+            // Fermer en cliquant à l'extérieur
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeConfirmationModal();
+                }
+            });
+        }
+        
+        // Fonction pour fermer le modal de confirmation
+        function closeConfirmationModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+
+    </script>
+</body>
+</html>
