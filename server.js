@@ -18,6 +18,18 @@ const automationService = require('./services/automationService');
 // Valider la configuration au démarrage
 validateConfig();
 
+// Configuration spécifique pour la production
+if (process.env.NODE_ENV === 'production') {
+    console.log('🏭 Mode production détecté');
+    console.log(`🔥 Firebase: ${process.env.USE_FIREBASE === 'true' ? 'Activé' : 'Désactivé'}`);
+    console.log(`🍃 MongoDB: ${process.env.MONGODB_URI ? 'Configuré' : 'Désactivé'}`);
+    
+    // Vérifier la configuration Firebase en production
+    if (process.env.USE_FIREBASE === 'true') {
+        console.log('🔧 Configuration des sessions en mémoire (pas de MongoDB)');
+    }
+}
+
 // Initialiser Firebase Admin SDK
 initializeFirebase();
 
@@ -30,16 +42,32 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 
 // Configuration des sessions
+let sessionStore;
+if (process.env.NODE_ENV === 'production' && process.env.USE_FIREBASE === 'true') {
+    // En production avec Firebase, utiliser un store en mémoire
+    console.log('🔧 Configuration des sessions en mémoire pour la production');
+    sessionStore = undefined; // Store par défaut (mémoire)
+} else {
+    // En développement, utiliser MongoDB si disponible
+    try {
+        sessionStore = MongoStore.create({
+            mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/bikorent-sessions',
+            touchAfter: 24 * 3600 // lazy session update
+        });
+        console.log('🔧 Configuration des sessions avec MongoDB');
+    } catch (error) {
+        console.log('⚠️ MongoDB non disponible, utilisation du store en mémoire');
+        sessionStore = undefined;
+    }
+}
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'bikorent-secret-key-2024',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/bikorent-sessions',
-        touchAfter: 24 * 3600 // lazy session update
-    }),
+    store: sessionStore,
     cookie: {
-        secure: false, // Set to true if using HTTPS
+        secure: process.env.NODE_ENV === 'production', // HTTPS en production
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
