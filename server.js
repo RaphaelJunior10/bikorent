@@ -46,18 +46,28 @@ app.use(expressLayouts);
 let sessionStore;
 
 // Configuration des sessions avec connect-mongo
+// Utiliser la base de données bikorent où l'utilisateur a les droits
+const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/bikorent';
+console.log('🔗 URL MongoDB (base bikorent):', mongoUrl);
+
 try {
     sessionStore = MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/bikorent-sessions',
+        mongoUrl: mongoUrl,
         touchAfter: 24 * 3600, // lazy session update
         ttl: 24 * 60 * 60 * 1000, // 24 heures
         autoIndex: false, // Désactiver la création automatique d'index
-        collectionName: 'sessions'
+        collectionName: 'sessions',
+        dbName: 'bikorent', // Utiliser la base de données bikorent
+        // Désactiver complètement la création d'index
+        createIndexes: false,
+        // Utiliser une base de données existante
+        useUnifiedTopology: true
     });
     console.log('🔧 Configuration des sessions avec connect-mongo et MongoDB');
 } catch (error) {
     console.log('⚠️ Erreur MongoDB, utilisation du store en mémoire');
     console.log('💡 Assurez-vous que MongoDB est démarré et accessible');
+    console.log('❌ Erreur détaillée:', error.message);
     sessionStore = undefined;
 }
 
@@ -251,6 +261,7 @@ cron.schedule('0 1 1 * *', async () => {
     }
 });
 
+console.log(process.env.MONGODB_URI);
 
 // Démarrage du serveur
 app.listen(PORT, () => {
