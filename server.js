@@ -34,7 +34,7 @@ if (process.env.NODE_ENV === 'production') {
 initializeFirebase();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3200;
 
 // Configuration EJS
 app.set('view engine', 'ejs');
