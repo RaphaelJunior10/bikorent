@@ -12,12 +12,81 @@
         <% }); %>
     <% } %>
 </head>
-<body>
+<body class="<%= locals.pageClass || '' %>">
     <!-- Menu latéral -->
     <%- include('partials/sidebar') %>
 
     <!-- Contenu principal -->
     <main class="main-content">
+        <!-- Alerte de paiement en retard -->
+        <% if (typeof paymentOverdue !== 'undefined' && paymentOverdue.isOverdue) { %>
+        <% if (paymentOverdue.alertLevel === 1) { %>
+        <!-- Niveau 1: Notification non intrusive (jaune) -->
+        <div class="payment-notification payment-level-1" id="paymentNotification">
+            <div class="notification-content">
+                <div class="notification-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="notification-message">
+                    <p><%= paymentOverdue.alertMessage %></p>
+                </div>
+                <div class="notification-actions">
+                    <button class="btn btn-primary" onclick="goToBilling()">
+                        <i class="fas fa-credit-card"></i>
+                        Payer maintenant
+                    </button>
+                    <button class="btn btn-secondary" onclick="closePaymentNotification()">
+                        <i class="fas fa-times"></i>
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+        <% } else if (paymentOverdue.alertLevel === 2) { %>
+        <!-- Niveau 2: Alerte orange avec restrictions -->
+        <div class="payment-overdue-alert payment-level-2" id="paymentOverdueAlert">
+            <div class="alert-content">
+                <div class="alert-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="alert-message">
+                    <h3>Restrictions appliquées</h3>
+                    <p><%= paymentOverdue.alertMessage %></p>
+                </div>
+                <div class="alert-actions">
+                    <button class="btn btn-primary" onclick="goToBilling()">
+                        <i class="fas fa-credit-card"></i>
+                        Payer maintenant
+                    </button>
+                    <button class="btn btn-secondary" onclick="closePaymentAlert()">
+                        <i class="fas fa-times"></i>
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+        <% } else if (paymentOverdue.alertLevel === 3) { %>
+        <!-- Niveau 3: Compte bloqué (rouge) -->
+        <div class="payment-blocked-alert payment-level-3" id="paymentBlockedAlert">
+            <div class="alert-content">
+                <div class="alert-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="alert-message">
+                    <h3>Compte bloqué</h3>
+                    <p><%= paymentOverdue.alertMessage %></p>
+                </div>
+                <div class="alert-actions">
+                    <button class="btn btn-primary" onclick="goToBilling()">
+                        <i class="fas fa-credit-card"></i>
+                        Payer maintenant
+                    </button>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        <% } %>
+
         <!-- Header avec bouton menu -->
         <header class="top-header">
             <button class="menu-btn" id="menuBtn">
@@ -26,7 +95,27 @@
             <div class="header-content">
                 <h1><%= locals.pageTitle || 'BikoRent' %></h1>
                 <div class="user-info">
-                    <span>Bienvenue, <%= locals.user ? locals.user.name : 'Utilisateur' %></span>
+                    <span>Bienvenue, <%
+                    if (locals.user) {
+                        let displayName = '';
+                        if (locals.user.firstName && locals.user.lastName) {
+                            displayName = locals.user.firstName + ' ' + locals.user.lastName;
+                        } else if (locals.user.name) {
+                            displayName = locals.user.name;
+                        } else {
+                            displayName = 'Utilisateur';
+                        }
+                        
+                        // Limiter la longueur du nom à 20 caractères
+                        if (displayName.length > 20) {
+                            displayName = displayName.substring(0, 20) + '...';
+                        }
+                        
+                        %><%= displayName %><%
+                    } else {
+                        %>Utilisateur<%
+                    }
+                    %></span>
                     <i class="fas fa-user-circle"></i>
                 </div>
             </div>
@@ -38,6 +127,7 @@
 
     <!-- Scripts -->
     <script src="/js/sidebar.js"></script>
+    <script src="/js/chat.js"></script>
     <% if (locals.extraScripts) { %>
         <% extraScripts.forEach(script => { %>
             <script src="<%= script %>"></script>
@@ -46,5 +136,399 @@
     <% if (locals.pageScript) { %>
         <script src="<%= pageScript %>"></script>
     <% } %>
+
+    <!-- Styles pour les alertes de paiement -->
+    <style>
+        /* Niveau 1: Notification jaune (non intrusive) */
+        .payment-notification.payment-level-1 {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 0.75rem;
+            margin: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            animation: slideDown 0.3s ease-out;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        /* Niveau 2: Alerte orange */
+        .payment-overdue-alert.payment-level-2 {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        /* Niveau 3: Compte bloqué rouge */
+        .payment-blocked-alert.payment-level-3 {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        /* Overlay de blocage pour niveau 3 */
+        .account-blocked-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .blocked-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 500px;
+            margin: 1rem;
+        }
+
+        .blocked-content h2 {
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+
+        .blocked-content p {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Styles communs */
+        .payment-overdue-alert,
+        .payment-blocked-alert {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .alert-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .alert-icon {
+            font-size: 2rem;
+            color: #fef2f2;
+        }
+
+        .alert-message {
+            flex: 1;
+        }
+
+        .alert-message h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .alert-message p {
+            margin: 0;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .alert-actions .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-actions .btn-primary {
+            background: white;
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .alert-actions .btn-primary:hover {
+            background: #fef2f2;
+            transform: translateY(-1px);
+        }
+
+        .alert-actions .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .alert-actions .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .alert-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .alert-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .alert-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+
+    <!-- Scripts pour les alertes de paiement -->
+    <script>
+        // Variables globales pour les restrictions
+        window.paymentRestrictions = {
+            canModify: true,
+            isBlocked: false,
+            alertLevel: 0
+        };
+
+        // Définir les fonctions globalement
+        window.goToBilling = function() {
+            window.location.href = '/parametres#billing';
+        };
+
+        window.closePaymentAlert = function() {
+            const alert = document.getElementById('paymentOverdueAlert');
+            if (alert) {
+                alert.style.animation = 'slideUp 0.3s ease-out';
+                setTimeout(() => {
+                    alert.remove();
+                }, 300);
+            }
+        };
+
+        window.closePaymentNotification = function() {
+            const notification = document.getElementById('paymentNotification');
+            if (notification) {
+                notification.style.animation = 'slideUp 0.3s ease-out';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }
+        };
+
+        // Fonction pour vérifier les restrictions
+        window.checkModificationRestriction = function() {
+            if (!window.paymentRestrictions.canModify) {
+                showModificationBlockedMessage();
+                return false;
+            }
+            return true;
+        };
+
+        // Fonction pour afficher le message de modification bloquée
+        function showModificationBlockedMessage() {
+            const message = document.createElement('div');
+            message.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #f97316;
+                color: white;
+                padding: 1.5rem 2rem;
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+                z-index: 10000;
+                text-align: center;
+                max-width: 400px;
+                animation: fadeIn 0.3s ease-out;
+            `;
+            message.innerHTML = `
+                <h3 style="margin: 0 0 1rem 0; font-size: 1.2rem;">
+                    <i class="fas fa-ban" style="margin-right: 0.5rem;"></i>
+                    Modification bloquée
+                </h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.95rem;">
+                    Vous ne pouvez plus apporter de modifications sur votre compte jusqu'au règlement de vos dettes.
+                </p>
+                <button onclick="this.parentElement.remove()" style="
+                    background: white;
+                    color: #f97316;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Fermer</button>
+            `;
+            document.body.appendChild(message);
+            
+            // Supprimer automatiquement après 5 secondes
+            setTimeout(() => {
+                if (message.parentElement) {
+                    message.remove();
+                }
+            }, 5000);
+        }
+
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ajouter les animations CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideUp {
+                    from {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                }
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.9);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Gérer la notification niveau 1 (auto-fermeture après 5 secondes)
+            const notification = document.getElementById('paymentNotification');
+            if (notification) {
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        closePaymentNotification();
+                    }
+                }, 5000);
+            }
+
+            // Gérer le blocage niveau 3
+            <% if (typeof paymentOverdue !== 'undefined' && paymentOverdue.alertLevel === 3) { %>
+            window.paymentRestrictions.isBlocked = true;
+            window.paymentRestrictions.canModify = false;
+            window.paymentRestrictions.alertLevel = 3;
+            
+            // Bloquer toutes les pages sauf paramètres
+            const currentPath = window.location.pathname;
+            if (currentPath !== '/parametres') {
+                showAccountBlockedOverlay();
+            }
+            <% } else if (typeof paymentOverdue !== 'undefined' && paymentOverdue.alertLevel === 2) { %>
+            window.paymentRestrictions.canModify = false;
+            window.paymentRestrictions.alertLevel = 2;
+            <% } else if (typeof paymentOverdue !== 'undefined' && paymentOverdue.alertLevel === 1) { %>
+            window.paymentRestrictions.canModify = true;
+            window.paymentRestrictions.alertLevel = 1;
+            <% } %>
+
+            // Intercepter les tentatives de modification
+            interceptModificationAttempts();
+        });
+
+        // Fonction pour afficher l'overlay de compte bloqué
+        function showAccountBlockedOverlay() {
+            const overlay = document.createElement('div');
+            overlay.className = 'account-blocked-overlay';
+            overlay.innerHTML = `
+                <div class="blocked-content">
+                    <h2><i class="fas fa-ban"></i> Compte bloqué</h2>
+                    <p>Votre compte est bloqué. Veuillez régulariser votre situation pour accéder à toutes les fonctionnalités.</p>
+                    <button onclick="goToBilling()" style="
+                        background: #ef4444;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        margin-right: 1rem;
+                    ">
+                        <i class="fas fa-credit-card"></i> Payer maintenant
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // Fonction pour intercepter les tentatives de modification
+        function interceptModificationAttempts() {
+            // Intercepter les soumissions de formulaires
+            document.addEventListener('submit', function(e) {
+                if (!window.paymentRestrictions.canModify) {
+                    e.preventDefault();
+                    showModificationBlockedMessage();
+                    return false;
+                }
+            });
+
+            // Intercepter les clics sur les boutons de modification
+            document.addEventListener('click', function(e) {
+                const target = e.target;
+                if (target.matches('button[type="submit"], .btn-primary, .btn-secondary') && 
+                    !target.closest('.payment-notification, .payment-overdue-alert, .payment-blocked-alert') &&
+                    !window.paymentRestrictions.canModify) {
+                    
+                    // Vérifier si c'est un bouton de modification
+                    const buttonText = target.textContent.toLowerCase();
+                    const isModificationButton = buttonText.includes('modifier') || 
+                                               buttonText.includes('ajouter') || 
+                                               buttonText.includes('supprimer') || 
+                                               buttonText.includes('créer') || 
+                                               buttonText.includes('mettre à jour') ||
+                                               buttonText.includes('enregistrer');
+                    
+                    if (isModificationButton) {
+                        e.preventDefault();
+                        showModificationBlockedMessage();
+                        return false;
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html> 

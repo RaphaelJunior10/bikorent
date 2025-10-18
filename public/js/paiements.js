@@ -396,7 +396,7 @@ function renderPaiementsTable() {
                             </td>
                             <td>${paiement.propriete}</td>
                             <td>${paiement.mois}</td>
-                            <td>€${paiement.montant}</td>
+                            <td>FCFA ${paiement.montant}</td>
                             <td>${paiement.datePaiement ? formatDate(paiement.datePaiement) : '-'}</td>
                             <td>
                                 <span class="status-badge ${getStatusClass(paiement.statut)}">
@@ -461,7 +461,7 @@ function renderPaiementsCards() {
                             </div>
                             <div class="info-item">
                                 <i class="fas fa-euro-sign"></i>
-                                <span>€${paiement.montant}</span>
+                                <span>FCFA ${paiement.montant}</span>
                             </div>
                         </div>
                     </div>
@@ -523,7 +523,7 @@ function renderMesPaiementsTable() {
                                 </div>
                             </td>
                             <td>${paiement.mois}</td>
-                            <td>€${paiement.montant}</td>
+                            <td>FCFA ${paiement.montant}</td>
                             <td>${paiement.datePaiement ? formatDate(paiement.datePaiement) : '-'}</td>
                             <td>
                                 <span class="status-badge ${getStatusClass(paiement.statut)}">
@@ -587,7 +587,7 @@ function renderMesPaiementsCards() {
                             </div>
                             <div class="info-item">
                                 <i class="fas fa-euro-sign"></i>
-                                <span>€${paiement.montant}</span>
+                                <span>FCFA ${paiement.montant}</span>
                             </div>
                         </div>
                     </div>
@@ -616,6 +616,7 @@ function getStatusClass(statut) {
         case 'paid': return 'status-paid';
         case 'pending': return 'status-pending';
         case 'overdue': return 'status-overdue';
+        case 'partiel': return 'status-partiel';
         default: return 'status-pending';
     }
 }
@@ -625,6 +626,7 @@ function getStatusIcon(statut) {
         case 'paid': return 'fa-check-circle';
         case 'pending': return 'fa-clock';
         case 'overdue': return 'fa-exclamation-triangle';
+        case 'partiel': return 'fa-clock';
         default: return 'fa-clock';
     }
 }
@@ -634,6 +636,7 @@ function getStatusText(statut) {
         case 'paid': return 'Payé';
         case 'pending': return 'En attente';
         case 'overdue': return 'En retard';
+        case 'partiel': return 'Partiel';
         default: return 'En attente';
     }
 }
@@ -653,12 +656,23 @@ function getMethodeText(methode) {
 function updateStats() {
     const totalRecu = paiements.filter(p => p.statut === 'paid').reduce((sum, p) => sum + p.montant, 0);
     const enAttente = paiements.filter(p => p.statut === 'pending').reduce((sum, p) => sum + p.montant, 0);
-    const enRetard = amountWaited - totalRecu;
-    const tauxRecouvrement = amountWaited > 0 ? Math.round((totalRecu / amountWaited) * 100) : 0;
-    document.getElementById('totalRecu').textContent = `€${totalRecu}`;
-    //document.getElementById('enAttente').textContent = `€${enAttente}`;
-    document.getElementById('enRetard').textContent = `€${enRetard}`;
-    document.getElementById('tauxRecouvrement').textContent = `${tauxRecouvrement}%`;
+    let enRetard =  amountWaited - totalRecu;
+    enRetard = enRetard > 0 ? enRetard : 0;
+    const tauxRecouvrement = amountWaited > 0 ? Math.round((totalRecu / amountWaited) * 100) : 100;
+    
+    // Mettre à jour le contenu et ajuster la taille
+    const totalRecuElement = document.getElementById('totalRecu');
+    const enRetardElement = document.getElementById('enRetard');
+    const tauxRecouvrementElement = document.getElementById('tauxRecouvrement');
+    
+    totalRecuElement.textContent = `FCFA ${totalRecu}`;
+    enRetardElement.textContent = `FCFA ${enRetard}`;
+    tauxRecouvrementElement.textContent = `${tauxRecouvrement}%`;
+    
+    // Ajuster la taille selon la longueur
+    adjustStatNumberSize(totalRecuElement);
+    adjustStatNumberSize(enRetardElement);
+    adjustStatNumberSize(tauxRecouvrementElement);
 }
 
 // Mise à jour des statistiques (Locataire)
@@ -681,8 +695,9 @@ function updateStatsLocataire() {
         const entryDate = new Date(p.tenant.entryDate);
         const dateActuelle = new Date();
         const monthDiff = dateActuelle.getMonth() - entryDate.getMonth();
+        console.log('monthDiff:', monthDiff);
         
-        totalToPay += p.tenant.monthlyRent * monthDiff;
+        totalToPay += p.monthlyRent * monthDiff;
     });
     
     const montantDu = (totalToPay > totalPaye) ? totalToPay - totalPaye : 0;
@@ -690,10 +705,67 @@ function updateStatsLocataire() {
     const prochainPaiement = proprietesLocataire.map(p => p.tenant.monthlyRent).reduce((sum, p) => sum + p, 0);
     const aJour = montantDu === 0 ? 'Oui' : 'Non';
 
-    document.getElementById('totalPaye').textContent = `€${totalPaye}`;
-    document.getElementById('montantDu').textContent = `€${montantDu}`;
-    //document.getElementById('prochainPaiement').textContent = `€${prochainPaiement}`;
-    document.getElementById('aJour').textContent = aJour;
+    // Mettre à jour le contenu et ajuster la taille
+    const totalPayeElement = document.getElementById('totalPaye');
+    const montantDuElement = document.getElementById('montantDu');
+    const aJourElement = document.getElementById('aJour');
+    
+    totalPayeElement.textContent = `FCFA ${totalPaye}`;
+    montantDuElement.textContent = `FCFA ${montantDu}`;
+    //document.getElementById('prochainPaiement').textContent = `FCFA ${prochainPaiement}`;
+    aJourElement.textContent = aJour;
+    
+    // Ajuster la taille selon la longueur
+    adjustStatNumberSize(totalPayeElement);
+    adjustStatNumberSize(montantDuElement);
+}
+
+// Fonction pour formater les chiffres avec notation k, M, etc.
+function adjustStatNumberSize(element) {
+    if (!element) return;
+    
+    // Supprimer toutes les classes de longueur existantes
+    element.removeAttribute('data-length');
+    
+    const originalText = element.textContent;
+    const formattedText = formatNumber(originalText);
+    
+    // Mettre à jour le texte avec la notation abrégée
+    element.textContent = formattedText;
+    
+    // Déterminer la catégorie de longueur basée sur le nouveau texte
+    const textLength = formattedText.length;
+    let lengthCategory;
+    if (textLength <= 6) {
+        lengthCategory = 'short';
+    } else if (textLength <= 10) {
+        lengthCategory = 'medium';
+    } else if (textLength <= 15) {
+        lengthCategory = 'long';
+    } else {
+        lengthCategory = 'very-long';
+    }
+    
+    // Appliquer l'attribut data-length
+    element.setAttribute('data-length', lengthCategory);
+}
+
+// Fonction pour formater les nombres avec notation abrégée
+function formatNumber(text) {
+    // Extraire le nombre du texte (enlever FCFA , %, etc.)
+    const match = text.match(/[FCFA $]?([\d,]+\.?\d*)/);
+    if (!match) return text;
+    
+    const number = parseFloat(match[1].replace(/,/g, ''));
+    const prefix = text.includes('FCFA ') ? 'FCFA ' : text.includes('$') ? '$' : '';
+    const suffix = text.includes('%') ? '%' : '';
+    
+    // Notation abrégée uniquement pour les valeurs >= 1 milliard
+    if (number >= 1000000000) {
+        return `${prefix}${(number / 1000000000).toFixed(1)}B${suffix}`;
+    } else {
+        return text; // Garder le format original pour tous les autres nombres
+    }
 }
 
 // Gestion des modals
@@ -901,7 +973,7 @@ function generatePaiementDetailsContent(paiement, type) {
                     </div>
                     <div class="detail-item">
                         <label>Montant:</label>
-                        <span class="detail-value amount">€${paiement.montant}</span>
+                        <span class="detail-value amount">FCFA ${paiement.montant}</span>
                     </div>
                 </div>
             </div>
@@ -973,7 +1045,7 @@ function generatePaiementDetailsContent(paiement, type) {
                         <div class="detail-item">
                             <label>Frais de retard:</label>
                             <span class="detail-value overdue">
-                                €${calculateLateFees(paiement.dateEcheance, paiement.montant)}
+                                FCFA ${calculateLateFees(paiement.dateEcheance, paiement.montant)}
                             </span>
                         </div>
                     </div>
@@ -1019,7 +1091,7 @@ function calculateDaysOverdue(dueDate) {
 
 function calculateLateFees(dueDate, amount) {
     const daysOverdue = calculateDaysOverdue(dueDate);
-    // Frais de retard : 5% par mois de retard, minimum 10€
+    // Frais de retard : 5% par mois de retard, minimum 10FCFA 
     const monthsOverdue = Math.ceil(daysOverdue / 30);
     const lateFee = Math.max(10, amount * 0.05 * monthsOverdue);
     
@@ -1091,10 +1163,10 @@ function renderLocatairesEnRetard() {
                     <span class="property-name">${item.propriete}</span>
                 </td>
                 <td>
-                    <span class="amount-paid">€${item.montantPaye}</span>
+                    <span class="amount-paid">FCFA ${item.montantPaye}</span>
                 </td>
                 <td>
-                    <span class="amount-due">€${item.montantDue}</span>
+                    <span class="amount-due">FCFA ${item.montantDue}</span>
                 </td>
                 <td>
                     <span class="months-badge">${item.moisDue} mois</span>
@@ -1154,10 +1226,10 @@ function renderRetardPaiement() {
                     </div>
                 </td>
                 <td>
-                    <span class="amount-paid">€${item.montantPaye}</span>
+                    <span class="amount-paid">FCFA ${item.montantPaye}</span>
                 </td>
                 <td>
-                    <span class="amount-due">€${item.montantDue}</span>
+                    <span class="amount-due">FCFA ${item.montantDue}</span>
                 </td>
                 <td>
                     <span class="months-badge">${item.moisDue} mois</span>
@@ -1311,6 +1383,10 @@ function generateCalendar(containerId, calendarData) {
                             statusClass = 'future';
                             cellContent = '●';
                             break;
+                        case 'partiel':
+                            statusClass = 'partiel';
+                            cellContent = '⚠';
+                            break;
                         default:
                             statusClass = 'empty';
                             cellContent = '';
@@ -1359,8 +1435,8 @@ function addCalendarTooltips() {
             const status = e.target.getAttribute('data-status');
             const amount = e.target.getAttribute('data-amount');
             
-            const statusText = status === 'payé' ? 'Payé' : status === 'en-retard' ? 'En retard' : 'Completé';
-            const statusColor = status === 'payé' ? '#10b981' : status === 'en-retard' ? '#ef4444' : '#f59e0b';
+            const statusText = status === 'payé' ? 'Payé' : status === 'en-retard' ? 'En retard' : status === 'partiel' ? 'Partiel' : 'Completé';
+            const statusColor = status === 'payé' ? '#10b981' : status === 'en-retard' ? '#ef4444' : status === 'partiel' ? 'gray' : '#f59e0b';
 
             tooltip.innerHTML = `
                 <div style="margin-bottom: 0.5rem;">
@@ -1369,7 +1445,7 @@ function addCalendarTooltips() {
                 <div><strong>Locataire:</strong> ${tenant}</div>
                 <div><strong>Propriété:</strong> ${property}</div>
                 <div><strong>Période:</strong> ${month}</div>
-                <div><strong>Montant:</strong> €${amount}</div>
+                <div><strong>Montant:</strong> FCFA ${amount}</div>
             `;
 
             tooltip.classList.add('show');
@@ -1615,6 +1691,7 @@ function resetEspecesForm() {
 
 // Variable pour stocker les propriétés disponibles
 let availableProperties = [];
+let tenantsObject = {};
 
 // Charger les propriétés pour le paiement en espèces
 async function loadProprietesForEspeces() {
@@ -1625,7 +1702,7 @@ async function loadProprietesForEspeces() {
         if (data.success && proprieteEspeces) {
             // Stocker les propriétés pour utilisation ultérieure
             availableProperties = data.properties || [];
-            
+            tenantsObject = data.tenantsObject || {};
             proprieteEspeces.innerHTML = '<option value="">Sélectionner une propriété</option>';
             
             if (data.properties && Array.isArray(data.properties)) {
@@ -1657,10 +1734,10 @@ function handleProprieteEspecesChange() {
         
         if (selectedProperty) {
             // Extraire les informations du locataire
+            const tenantObject = tenantsObject[selectedProperty.tenant.userId];
+            const tenantName = tenantObject.firstName + ' ' + tenantObject.lastName;
+
             const tenant = selectedProperty.tenant;
-            const locataireName = tenant ? 
-                (tenant.name || `${tenant.firstName || ''} ${tenant.lastName || ''}`.trim()) : 
-                'Aucun locataire';
             
             const monthlyRent = selectedProperty.monthlyRent || 0;
             const entryDate = tenant && tenant.entryDate ? 
@@ -1685,7 +1762,7 @@ function handleProprieteEspecesChange() {
                         </div>
                         <div class="info-item">
                             <span class="info-label">Locataire:</span>
-                            <span class="info-value">${locataireName}</span>
+                            <span class="info-value">${tenantName}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Date d'entrée:</span>
@@ -1765,10 +1842,9 @@ function confirmEspecesPayment() {
     }
     
     const propertyName = selectedProperty.name;
-    const tenant = selectedProperty.tenant;
-    const locataireName = tenant ? 
-        (tenant.name || `${tenant.firstName || ''} ${tenant.lastName || ''}`.trim()) : 
-        'Aucun locataire';
+    const tenantObject = tenantsObject[selectedProperty.tenant.userId];
+    const tenantName = tenantObject.firstName + ' ' + tenantObject.lastName;
+    
     const months = parseInt(moisEspeces.value);
     const monthlyRent = selectedProperty.monthlyRent || 0;
     const totalAmount = monthlyRent * months;
@@ -1789,7 +1865,7 @@ function confirmEspecesPayment() {
                         </div>
                         <div class="detail-row">
                             <span class="label">Locataire:</span>
-                            <span class="value">${locataireName}</span>
+                            <span class="value">${tenantName}</span>
                         </div>
                         <div class="detail-row">
                             <span class="label">Nombre de mois:</span>

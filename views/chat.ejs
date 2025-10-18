@@ -1,0 +1,1263 @@
+<!-- ID utilisateur pour JavaScript -->
+<div id="currentUserId" style="display: none;"><%= currentUserId %></div>
+
+<div class="chat-container">
+    <!-- Header du chat -->
+    <div class="chat-header">
+        <div class="chat-header-content">
+            <div class="chat-title">
+                <h2><i class="fas fa-comments"></i> Chat</h2>
+                <p>Communiquez avec vos locataires</p>
+            </div>
+            <div class="chat-actions">
+                <button class="btn btn-primary" id="refreshChat">
+                    <i class="fas fa-sync-alt"></i> Actualiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu principal du chat -->
+    <div class="chat-main">
+        <!-- Liste des conversations (sidebar) -->
+        <div class="chat-sidebar" id="chatSidebar">
+            <div class="chat-sidebar-header">
+                <h3>Conversations</h3>
+                <div class="search-box">
+                    <input type="text" id="searchConversations" placeholder="Rechercher une conversation...">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            
+            <div class="conversations-list" id="conversationsList">
+                <% if (conversations && conversations.length > 0) { %>
+                    <script>
+                        console.log('📋 Conversations reçues dans la vue:', <%- JSON.stringify(conversations) %>);
+    window.conversations = <%- JSON.stringify(conversations) %>;
+    window.redirectPropertyId = '<%= redirectPropertyId || "" %>';
+    window.preMessage = '<%= preMessage || "" %>';
+    window.redirectPropertyInfo = <%- JSON.stringify(redirectPropertyInfo || null) %>;
+                    </script>
+            <% conversations.forEach(function(conversation) { %>
+                <div class="conversation-item" data-property-id="<%= conversation.propertyId %>" data-sender-id="<%= conversation.senderId %>">
+                    <div class="conversation-content">
+                        <!-- Ligne 1: Nom de l'utilisateur avec petite icône -->
+                        <div class="conversation-line conversation-user">
+                            <i class="fas fa-user-circle conversation-icon-small"></i>
+                            <span class="conversation-sender-name"><%= conversation.senderName %></span>
+                            <span class="conversation-time">
+                                <% 
+                                let displayTime;
+                                if (conversation.lastMessageTime && conversation.lastMessageTime.seconds) {
+                                    displayTime = new Date(conversation.lastMessageTime.seconds * 1000).toLocaleTimeString('fr-FR', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                    });
+                                } else {
+                                    displayTime = new Date(conversation.lastMessageTime).toLocaleTimeString('fr-FR', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                    });
+                                }
+                                %>
+                                <%= displayTime %>
+                            </span>
+                        </div>
+                        
+                        <!-- Ligne 2: Nom de la propriété avec petite icône -->
+                        <div class="conversation-line conversation-property">
+                            <i class="fas fa-building conversation-icon-small"></i>
+                            <span class="conversation-property-name"><%= conversation.propertyName %></span>
+                        </div>
+                        
+                        <!-- Ligne 3: Message avec icône message -->
+                        <div class="conversation-line conversation-message">
+                            <i class="fas fa-comment conversation-icon-small"></i>
+                            <span class="conversation-message-text"><%= conversation.lastMessage %></span>
+                            <% if (conversation.unreadCount > 0) { %>
+                                <span class="unread-badge"><%= conversation.unreadCount %></span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+                <% } else { %>
+                    <script>
+                        console.log('⚠️ Aucune conversation reçue dans la vue');
+                        window.conversations = [];
+                        window.redirectPropertyId = '<%= redirectPropertyId || "" %>';
+                        window.preMessage = '<%= preMessage || "" %>';
+                        window.redirectPropertyInfo = <%- JSON.stringify(redirectPropertyInfo || null) %>;
+                    </script>
+                    <div class="no-conversations">
+                        <i class="fas fa-comments"></i>
+                        <p>Aucune conversation</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Zone de conversation -->
+        <div class="chat-conversation" id="chatConversation">
+            <div class="no-conversation-selected">
+                <div class="no-conversation-content">
+                    <i class="fas fa-comments"></i>
+                    <h3>Sélectionnez une conversation</h3>
+                    <p>Choisissez une propriété pour commencer à discuter</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template pour une conversation active -->
+<div id="conversationTemplate" style="display: none;">
+    <div class="conversation-header-bar">
+        <div class="conversation-info">
+            <div class="conversation-avatar-small">
+                <i class="fas fa-building"></i>
+            </div>
+            <div id="conversationDetails" class="conversation-details">
+                
+            </div>
+        </div>
+        <div class="conversation-actions">
+            <button class="btn-icon" id="backToConversations" title="Retour aux conversations">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="btn-icon" id="conversationInfo" title="Informations">
+                <i class="fas fa-info-circle"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="messages-container" id="messagesContainer">
+        <!-- Les messages seront ajoutés ici dynamiquement -->
+    </div>
+    
+    <div class="message-input-container">
+        <div class="message-input-wrapper">
+            <button class="btn-icon attachment-btn" title="Joindre un fichier">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <div class="message-input">
+                <textarea id="messageInput" placeholder="Tapez votre message..." rows="1"></textarea>
+            </div>
+            <button class="btn-icon send-btn" id="sendMessage" title="Envoyer">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Template pour un message -->
+<div id="messageTemplate" style="display: none;">
+    <div class="message">
+        <div class="message-content">
+            <div class="message-text"></div>
+            <div class="message-time"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles CSS pour le chat -->
+<style>
+.chat-container {
+    height: calc(100vh - var(--header-height));
+    display: flex;
+    flex-direction: column;
+    background: #f0f2f5;
+}
+
+.chat-header {
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 2rem;
+    box-shadow: var(--shadow);
+}
+
+.chat-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-title h2 {
+    color: var(--primary-color);
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.chat-title p {
+    color: var(--secondary-color);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Sidebar des conversations */
+.chat-sidebar {
+    width: 350px;
+    background: white;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.chat-sidebar-header h3 {
+    margin: 0 0 1rem 0;
+    color: var(--dark-color);
+    font-size: 1.1rem;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    background: #f8f9fa;
+}
+
+.search-box i {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+}
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    background-color: #ffffff;
+}
+
+/* Couleurs alternées pour différencier les conversations */
+.conversation-item:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.conversation-item:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.conversation-item:hover {
+    background-color: #e9ecef !important;
+}
+
+.conversation-item.active {
+    background-color: #e3f2fd !important;
+    border-left: 3px solid var(--primary-color);
+}
+
+.conversation-content {
+    width: 100%;
+}
+
+.conversation-line {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    min-height: 20px;
+}
+
+.conversation-line:last-child {
+    margin-bottom: 0;
+}
+
+.conversation-icon-small {
+    font-size: 0.8rem;
+    margin-right: 8px;
+    width: 12px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.conversation-user {
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.conversation-user .conversation-icon-small {
+    color: #2563eb;
+}
+
+.conversation-sender-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
+}
+
+.conversation-time {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+    white-space: nowrap;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.conversation-property {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.conversation-property .conversation-icon-small {
+    color: #28a745;
+}
+
+.conversation-property-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-message {
+    font-size: 0.85rem;
+    color: var(--secondary-color);
+}
+
+.conversation-message .conversation-icon-small {
+    color: #6c757d;
+}
+
+.conversation-message-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unread-badge {
+    background: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: bold;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.no-conversations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--secondary-color);
+}
+
+.no-conversations i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Zone de conversation */
+.chat-conversation {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f0f2f5;
+}
+
+.no-conversation-selected {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.no-conversation-content {
+    text-align: center;
+    color: var(--secondary-color);
+}
+
+.no-conversation-content i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.no-conversation-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--dark-color);
+}
+
+/* Header de conversation active */
+.conversation-header-bar {
+    background: white;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+}
+
+.conversation-info {
+    display: flex;
+    align-items: center;
+}
+
+.conversation-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 0.75rem;
+}
+
+.conversation-details h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--dark-color);
+}
+
+        .conversation-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--success-color);
+        }
+
+        .btn-add-tenant {
+            background: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+            margin-top: 4px;
+        }
+
+        .btn-add-tenant:hover {
+            background: #0d8f3a;
+            transform: translateY(-1px);
+        }
+
+        .btn-add-tenant:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-add-tenant.loading {
+            background: var(--primary-color);
+        }
+
+        .btn-add-tenant.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+.conversation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: #f0f0f0;
+    color: var(--secondary-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+#addTenantBtn {
+    display: flex;
+
+}
+
+/* Container des messages */
+.messages-container {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.message {
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+
+.message.sent {
+    justify-content: flex-end;
+}
+
+.message.received {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 0.75rem 1rem;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message.sent .message-content {
+    background: var(--primary-color);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .message-content {
+    background: white;
+    color: var(--dark-color);
+    border-bottom-left-radius: 4px;
+    box-shadow: var(--shadow);
+}
+
+.message-text {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+    text-align: right;
+}
+
+.message.received .message-time {
+    text-align: left;
+}
+
+/* Input de message */
+.message-input-container {
+    background: white;
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.message-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    background: #f0f2f5;
+    border-radius: 25px;
+    padding: 0.5rem;
+}
+
+.message-input {
+    flex: 1;
+}
+
+.message-input textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    resize: none;
+    outline: none;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    max-height: 100px;
+    min-height: 20px;
+}
+
+.attachment-btn {
+    color: var(--secondary-color);
+}
+
+.send-btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+.send-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .chat-container {
+        height: 100vh;
+    }
+    
+    .chat-main {
+        position: relative;
+        height: 100%;
+    }
+    
+    .chat-sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .chat-sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .chat-conversation {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .conversation-header-bar {
+        padding: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+    
+    .conversation-actions {
+        gap: 0.25rem;
+    }
+    
+    .btn-icon {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .message-content {
+        max-width: 85%;
+    }
+    
+    .chat-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .chat-title h2 {
+        font-size: 1.25rem;
+    }
+    
+    .messages-container {
+        padding: 0.75rem;
+        padding-bottom: 1rem;
+    }
+    
+    .message-input-container {
+        padding: 0.75rem;
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .message-input-wrapper {
+        border-radius: 20px;
+    }
+    
+    .message-input textarea {
+        font-size: 16px; /* Évite le zoom sur iOS */
+    }
+    
+    /* Animation pour les messages */
+    .message {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Indicateur de frappe */
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        color: var(--secondary-color);
+        font-size: 0.8rem;
+        font-style: italic;
+    }
+    
+    .typing-dots {
+        display: flex;
+        gap: 0.25rem;
+        margin-left: 0.5rem;
+    }
+    
+    .typing-dots span {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--secondary-color);
+        animation: typing 1.4s infinite ease-in-out;
+    }
+    
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes typing {
+        0%, 80%, 100% {
+            transform: scale(0.8);
+            opacity: 0.5;
+        }
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .chat-actions {
+        width: 100%;
+    }
+    
+    .chat-actions .btn {
+        width: 100%;
+    }
+    
+    .conversation-item {
+        padding: 0.75rem;
+    }
+    
+    .conversation-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .conversation-title {
+        font-size: 0.9rem;
+    }
+    
+    .conversation-message {
+        font-size: 0.8rem;
+    }
+}
+
+/* Styles pour le popup d'informations utilisateur */
+.user-info-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.user-info-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+}
+
+.user-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.user-info-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-popup:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.user-info-body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.user-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem auto;
+    font-size: 2.5rem;
+    color: white;
+}
+
+.user-details {
+    text-align: left;
+}
+
+.user-name-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.user-name-section h4 {
+    margin: 0;
+    color: var(--dark-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.copy-name-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.copy-name-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.copy-name-btn:active {
+    transform: translateY(0);
+}
+
+.user-info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.user-info-item:hover {
+    background: #e9ecef;
+}
+
+.user-info-item i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.user-info-item .status-online {
+    color: #28a745;
+}
+
+.user-info-item span {
+    color: var(--dark-color);
+    font-size: 0.95rem;
+}
+
+.user-info-footer {
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive pour le popup */
+@media (max-width: 480px) {
+    .user-info-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .user-info-header,
+    .user-info-body,
+    .user-info-footer {
+        padding: 1rem;
+    }
+    
+    .user-avatar-large {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+}
+
+/* Styles pour le popup d'ajout de locataire */
+.add-tenant-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.add-tenant-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+}
+
+.add-tenant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.add-tenant-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.add-tenant-body {
+    padding: 1.5rem;
+}
+
+.confirmation-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-section h4 {
+    margin: 0 0 1rem 0;
+    color: var(--dark-color);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.info-item i {
+    margin-right: 0.75rem;
+    width: 16px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.info-item span {
+    color: var(--dark-color);
+    font-size: 0.9rem;
+}
+
+.confirmation-message {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.confirmation-message p {
+    margin: 0 0 0.5rem 0;
+    color: var(--dark-color);
+    font-size: 0.95rem;
+}
+
+.confirmation-message p:last-child {
+    margin-bottom: 0;
+}
+
+.warning-text {
+    color: #1976d2;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.add-tenant-footer {
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-primary {
+    background: var(--success-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0d8f3a;
+}
+
+.btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Responsive pour le popup d'ajout de locataire */
+@media (max-width: 480px) {
+    .add-tenant-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .add-tenant-header,
+    .add-tenant-body,
+    .add-tenant-footer {
+        padding: 1rem;
+    }
+    
+    .confirmation-info {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .add-tenant-footer {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+</style>
+
+<!-- Popup d'informations utilisateur -->
+<div id="userInfoPopup" class="user-info-popup" style="display: none;">
+    <div class="user-info-content">
+        <div class="user-info-header">
+            <h3>Informations utilisateur</h3>
+            <button class="close-popup" id="closeUserInfoPopup">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="user-info-body">
+            <div class="user-avatar-large">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-details">
+                <div class="user-name-section">
+                    <h4 id="popupUserName">Nom de l'utilisateur</h4>
+                    <button class="copy-name-btn" id="copyUserName" title="Copier le nom">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="user-info-item">
+                    <i class="fas fa-envelope"></i>
+                    <span id="popupUserEmail">email@example.com</span>
+                </div>
+                <div class="user-info-item">
+                    <i class="fas fa-phone"></i>
+                    <span id="popupUserPhone">+33 1 23 45 67 89</span>
+                </div>
+                <div class="user-info-item">
+                    <i class="fas fa-building"></i>
+                    <span id="popupUserProperty">Propriété concernée</span>
+                </div>
+                <div class="user-info-item">
+                    <i class="fas fa-calendar"></i>
+                    <span id="popupUserJoinDate">Membre depuis janvier 2024</span>
+                </div>
+                <!--<div class="user-info-item">
+                    <i class="fas fa-circle status-online"></i>
+                    <span>En ligne</span>
+                </div>-->
+            </div>
+        </div>
+        <div class="user-info-footer">
+            <button class="btn btn-secondary" id="closeUserInfoPopup2">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Popup de confirmation pour ajouter un locataire -->
+<div id="addTenantPopup" class="add-tenant-popup" style="display: none;">
+    <div class="add-tenant-content">
+        <div class="add-tenant-header">
+            <h3>Ajouter comme locataire</h3>
+            <button class="close-popup" id="closeAddTenantPopup">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="add-tenant-body">
+            <div class="confirmation-info">
+                <div class="info-section">
+                    <h4>Propriété</h4>
+                    <div class="info-item">
+                        <i class="fas fa-building"></i>
+                        <span id="popupPropertyName">Nom de la propriété</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="popupPropertyAddress">Adresse de la propriété</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-euro-sign"></i>
+                        <span id="popupPropertyRent">Loyer mensuel</span>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <h4>Locataire</h4>
+                    <div class="info-item">
+                        <i class="fas fa-user"></i>
+                        <span id="popupTenantName">Nom du locataire</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <span id="popupTenantEmail">Email du locataire</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="confirmation-message">
+                <p>Êtes-vous sûr de vouloir ajouter <strong id="confirmTenantName">[Nom]</strong> comme locataire de <strong id="confirmPropertyName">[Propriété]</strong> ?</p>
+                <p class="warning-text">Cette action enverra automatiquement un message de bienvenue au locataire.</p>
+            </div>
+        </div>
+        <div class="add-tenant-footer">
+            <button class="btn btn-secondary" id="cancelAddTenant">Annuler</button>
+            <button class="btn btn-primary" id="confirmAddTenant">
+                <i class="fas fa-user-plus"></i>
+                Confirmer l'ajout
+            </button>
+        </div>
+    </div>
+</div>

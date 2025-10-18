@@ -127,6 +127,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePasswordStrength();
     initSidebar(); // Initialiser le sidebar
     markActivePage(); // Marquer la page active
+    
+    // Vérifier l'URL pour ouvrir automatiquement l'onglet facturation
+    checkUrlHash();
 });
 
 // Configuration des écouteurs d'événements
@@ -169,6 +172,25 @@ function handleSectionChange(e) {
     // Mettre à jour le contenu
     settingsSections.forEach(section => section.classList.remove('active'));
     document.getElementById(section).classList.add('active');
+}
+
+// Fonction pour ouvrir une section spécifique
+function openSection(sectionId) {
+    const sectionBtn = document.querySelector(`[data-section="${sectionId}"]`);
+    if (sectionBtn) {
+        sectionBtn.click();
+    }
+}
+
+// Vérifier l'URL pour ouvrir automatiquement l'onglet facturation
+function checkUrlHash() {
+    const hash = window.location.hash;
+    if (hash === '#billing') {
+        // Attendre un peu que la page soit complètement chargée
+        setTimeout(() => {
+            openSection('billing');
+        }, 100);
+    }
 }
 
 // Chargement des données utilisateur
@@ -235,8 +257,20 @@ function loadUserData() {
     // Charger les données de facturation
     loadBillingData();
     
+    // Charger les plans de facturation
+    loadBillingPlans();
+    
+    // Charger les méthodes de paiement
+    loadPaymentMethods();
+    
+    // Charger l'historique de facturation
+    loadBillingHistory();
+    
     // Charger les intégrations
     loadIntegrationsData();
+    
+    // Charger l'état des intégrations depuis le backend
+    loadIntegrationsFromBackend();
 }
 
 // Configuration des switches
@@ -259,6 +293,10 @@ function setupSelects() {
 function handleSwitchChange(e) {
     const id = e.target.id;
     const value = e.target.checked;
+
+    if(id == 'isDefaultPaymentMethod'){
+        return;
+    }
     
     console.log('🔄 Switch modifié:', id, '=', value);
     
@@ -284,6 +322,11 @@ function handleSwitchChange(e) {
 function handleSelectChange(e) {
     const id = e.target.id;
     const value = e.target.value;
+    
+    // Ignorer le select des méthodes de paiement (géré séparément)
+    if (id === 'paymentMethodType') {
+        return;
+    }
     
     // Mettre à jour les données utilisateur
     if (id === 'language' || id === 'timezone' || id === 'dateFormat' || id === 'currency') {
@@ -399,8 +442,53 @@ function handlePasswordSubmit(e) {
         return;
     }
     
-    // Afficher la modal de confirmation
-    showPasswordConfirmationModal();
+    // Vérifier le mot de passe actuel avant de continuer
+    verifyCurrentPassword(currentPassword);
+}
+
+// Fonction pour vérifier le mot de passe actuel
+async function verifyCurrentPassword(currentPassword) {
+    const submitBtn = passwordForm.querySelector('button[type="submit"]');
+    const originalContent = submitBtn.innerHTML;
+    
+    // Afficher le loader sur le bouton
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vérification...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Faire une tentative de connexion avec le mot de passe actuel
+        const response = await fetch('/auth/verify-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                currentPassword: currentPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        // Restaurer le bouton
+        submitBtn.innerHTML = originalContent;
+        submitBtn.disabled = false;
+        
+        if (data.success) {
+            // Mot de passe correct, afficher la modal de confirmation
+            showPasswordConfirmationModal();
+        } else {
+            // Mot de passe incorrect
+            showNotification(data.message || 'Mot de passe actuel incorrect', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la vérification du mot de passe:', error);
+        
+        // Restaurer le bouton
+        submitBtn.innerHTML = originalContent;
+        submitBtn.disabled = false;
+        
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    }
 }
 
 // Gestion de l'upload de photo
@@ -598,12 +686,14 @@ function loadBillingData() {
     // Mettre à jour les informations du plan
     const planCard = document.querySelector('.plan-card .plan-info h4');
     if (planCard) {
-        planCard.textContent = `Plan ${userData.billing.plan}`;
+        planCard.textContent = userData.billing.plan;
     }
     
     const planPrice = document.querySelector('.plan-card .plan-info p');
     if (planPrice) {
-        planPrice.textContent = `${formatCurrency(userData.billing.price, userData.billing.currency)}/mois`;
+        const price = userData.billing.propertiesCount > 0 ? 
+            userData.billing.price : 0;
+        planPrice.textContent = `${formatCurrency(price, userData.billing.currency)}/mois`;
     }
     
     // Mettre à jour l'historique de facturation
@@ -620,6 +710,153 @@ function loadBillingData() {
     }
 }
 
+// Chargement des plans de facturation
+function loadBillingPlans() {
+    console.log('💳 Chargement des plans de facturation...');
+    
+    fetch('/parametres/billing/plans')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.plans) {
+                console.log('✅ Plans de facturation chargés:', data.data.plans);
+                window.billingPlans = data.data.plans;
+                renderBillingPlans(data.data.plans);
+            } else {
+                console.log('⚠️ Aucun plan de facturation trouvé');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur lors du chargement des plans de facturation:', error);
+        });
+}
+
+// Affichage des plans de facturation
+function renderBillingPlans(plans) {
+    const plansContainer = document.querySelector('.billing-plans-container');
+    if (!plansContainer) return;
+    
+    const currentPlanId = userData.billing?.planId || 'basique';
+    
+    plansContainer.innerHTML = plans.map(plan => {
+        const isCurrentPlan = plan.id === currentPlanId;
+        const maxPropertiesText = plan.maxProperties === -1 ? 'Illimité' : plan.maxProperties;
+        
+        return `
+            <div class="billing-plan-card ${isCurrentPlan ? 'current-plan' : ''}">
+                <div class="plan-header">
+                    <h3>${plan.name}</h3>
+                    <div class="plan-price">
+                        <span class="price">${plan.pricePerProperty} ${plan.currency}</span>
+                        <span class="period">/propriété/mois</span>
+                    </div>
+                </div>
+                <div class="plan-description">
+                    <p>${plan.description}</p>
+                </div>
+                <div class="plan-features">
+                    <ul>
+                        <li><i class="fas fa-check"></i> Jusqu'à ${maxPropertiesText} propriétés</li>
+                        ${plan.features.map(feature => `<li><i class="fas fa-check"></i> ${feature}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="plan-actions">
+                    ${isCurrentPlan ? 
+                        '<button class="btn-secondary" disabled><i class="fas fa-check"></i> Plan actuel</button>' :
+                        `<button class="btn-primary" onclick="changeBillingPlan('${plan.id}')">
+                            <i class="fas fa-arrow-right"></i> Changer de plan
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Fonction pour changer de plan de facturation
+function changeBillingPlan(planId) {
+    const plan = window.billingPlans?.find(p => p.id === planId);
+    if (!plan) {
+        showNotification('Plan de facturation non trouvé', 'error');
+        return;
+    }
+    window.billingPlanId = planId;
+    // Afficher la modal de confirmation
+    showConfirmationModal({
+        title: 'Changer de plan de facturation',
+        content: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <i class="fas fa-credit-card" style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem;"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">Êtes-vous sûr de vouloir changer vers le <strong>${plan.name}</strong> ?</p>
+                <p style="color: #6b7280; font-size: 0.9rem;">Prix: ${plan.pricePerProperty} ${plan.currency}/propriété/mois</p>
+                <p style="color: #6b7280; font-size: 0.9rem;">Propriétés max: ${plan.maxProperties === -1 ? 'Illimité' : plan.maxProperties}</p>
+            </div>
+        `,
+        onConfirm: () => {
+            closeConfirmationModal();
+            executeBillingPlanChange(window.billingPlanId);
+        }
+    });
+}
+
+// Exécution du changement de plan
+function executeBillingPlanChange(planId) {
+    const button = document.querySelector(`button[onclick="changeBillingPlan('${planId}')"]`);
+    const originalContent = button.innerHTML;
+    
+    // Afficher le loader
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changement en cours...';
+    button.disabled = true;
+    
+    // Faire l'appel API
+    fetch('/parametres/billing/change-plan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ planId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restaurer le bouton
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        if (data.success) {
+            // Mettre à jour les données locales
+            userData.billing = {
+                ...userData.billing,
+                plan: data.data.plan.name,
+                planId: data.data.plan.id,
+                price: data.data.plan.pricePerProperty,
+                currency: data.data.plan.currency
+            };
+            
+            // Recharger l'affichage
+            loadBillingData();
+            renderBillingPlans(window.billingPlans);
+            
+            // Sauvegarder les données
+            saveUserData();
+            
+            // Afficher la notification de succès
+            showNotification(data.message || 'Plan de facturation changé avec succès', 'success');
+        } else {
+            // Afficher l'erreur
+            showNotification(data.message || 'Erreur lors du changement de plan', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erreur lors du changement de plan:', error);
+        
+        // Restaurer le bouton
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        // Afficher l'erreur
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    });
+}
+
 // Chargement des données d'intégrations
 function loadIntegrationsData() {
     if (!userData.integrations) return;
@@ -629,7 +866,7 @@ function loadIntegrationsData() {
         integrationsSection.innerHTML = userData.integrations.map(integration => `
             <div class="integration-item">
                 <div class="integration-info">
-                    <img src="https://via.placeholder.com/40x40/${integration.color.replace('#', '')}/ffffff?text=${integration.icon}" alt="${integration.name}">
+                    <img style="font-size: 30px;" src="https://via.placeholder.com/40x40/${integration.color.replace('#', '')}/ffffff?text=${integration.icon}" alt="${integration.icon}">
                     <div>
                         <h4>${integration.name}</h4>
                         <p>${integration.description}</p>
@@ -639,7 +876,7 @@ function loadIntegrationsData() {
                     <span class="status-${integration.connected ? 'connected' : 'disconnected'}">
                         ${integration.connected ? 'Connecté' : 'Non connecté'}
                     </span>
-                    <button class="btn-${integration.connected ? 'secondary' : 'primary'}" 
+                    <button class="btn-${integration.connected ? 'secondary' : 'primary'}"
                             onclick="toggleIntegration('${integration.id}')">
                         ${integration.connected ? 'Déconnecter' : 'Connecter'}
                     </button>
@@ -649,18 +886,126 @@ function loadIntegrationsData() {
     }
 }
 
+// Fonction pour charger l'état des intégrations depuis le backend
+function loadIntegrationsFromBackend() {
+    console.log('🔗 Chargement de l\'état des intégrations depuis le backend...');
+    
+    fetch('/parametres/integrations')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.integration) {
+                console.log('✅ État des intégrations chargé depuis le backend:', data.data.integration);
+                
+                // Mettre à jour les données locales
+                userData.integration = data.data.integration;
+                
+                // Synchroniser l'état des intégrations avec les données du backend
+                if (userData.integrations) {
+                    userData.integrations.forEach(integration => {
+                        const backendState = userData.integration[integration.id];
+                        if (backendState) {
+                            integration.connected = backendState.connected;
+                        }
+                    });
+                    
+                    // Recharger l'affichage avec les données synchronisées
+                    loadIntegrationsData();
+                }
+            } else {
+                console.log('⚠️ Aucun état d\'intégration trouvé dans le backend');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur lors du chargement de l\'état des intégrations:', error);
+            // En cas d'erreur, on continue avec les données par défaut
+        });
+}
+
 // Fonction pour basculer l'état d'une intégration
 function toggleIntegration(integrationId) {
     const integration = userData.integrations.find(i => i.id === integrationId);
-    if (integration) {
-        integration.connected = !integration.connected;
-        loadIntegrationsData(); // Recharger l'affichage
-        saveUserData();
-        showNotification(
-            `${integration.name} ${integration.connected ? 'connecté' : 'déconnecté'}`, 
-            'success'
-        );
+    if (!integration) {
+        console.error('❌ Intégration non trouvée:', integrationId);
+        showNotification('Intégration non trouvée', 'error');
+        return;
     }
+    
+    const newState = !integration.connected;
+    const action = newState ? 'connect' : 'disconnect';
+    
+    console.log('🔗 Basculement de l\'intégration:', {
+        integrationId,
+        currentState: integration.connected,
+        newState,
+        action
+    });
+
+    //On recupere le plan de facturation
+    const plan = userData.billing.plan;
+    console.log('Plan de facturation:', plan);
+    
+    if(!plan.includes('Enterprise')){
+    //Cette fonctionnalite sera traitee plus tard.
+        showNotification('Intégration non disponnible pour votre plan de facturation');
+
+        return;
+    }
+    
+    // Afficher un loader sur le bouton
+    const button = document.querySelector(`button[onclick="toggleIntegration('${integrationId}')"]`);
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+
+    
+    
+    // Faire l'appel API vers le backend
+    fetch(`/parametres/integrations/${integrationId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restaurer le bouton
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        if (data.success) {
+            // Mettre à jour l'état local
+            integration.connected = newState;
+            
+            // Mettre à jour les données d'intégration dans userData si elles existent
+            if (!userData.integration) {
+                userData.integration = {};
+            }
+            userData.integration[integrationId] = data.data;
+            
+            // Recharger l'affichage
+            loadIntegrationsData();
+            
+            // Sauvegarder les données
+            saveUserData();
+            
+            // Afficher la notification de succès
+            showNotification(data.message || `${integration.name} ${newState ? 'connecté' : 'déconnecté'} avec succès`, 'success');
+        } else {
+            // Afficher l'erreur
+            showNotification(data.message || 'Erreur lors de la mise à jour de l\'intégration', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erreur lors de la mise à jour de l\'intégration:', error);
+        
+        // Restaurer le bouton
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        // Afficher l'erreur
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    });
 }
 
 // Sauvegarde des données utilisateur
@@ -779,7 +1124,7 @@ function showPasswordConfirmationModal() {
 }
 
 // Fonction pour mettre à jour le mot de passe
-function updatePassword() {
+async function updatePassword() {
     const currentPassword = document.getElementById('currentPassword').value;
     const newPasswordValue = newPassword.value;
     const confirmPasswordValue = confirmPassword.value;
@@ -791,7 +1136,9 @@ function updatePassword() {
     // Afficher le loader sur le bouton
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise à jour...';
     submitBtn.disabled = true;
+
     
+
     // Faire l'appel API vers le backend
     fetch('/parametres/password', {
         method: 'POST',
@@ -938,6 +1285,7 @@ function logoutAllDevices() {
     // Afficher le loader sur le bouton
     logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Déconnexion...';
     logoutBtn.disabled = true;
+    console.log('Déconnexion de tous les appareils...');
     
     // Faire l'appel API vers le backend
     fetch('/parametres/logout-all', {
@@ -1055,18 +1403,50 @@ function hideNotificationLoader(notificationId) {
 }
 
 // Fonctions utilitaires
-function formatCurrency(amount, currency = 'EUR') {
+function formatCurrency(amount, currency = 'XAF') {
     const formatters = {
         'EUR': new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }),
         'USD': new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
-        'GBP': new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' })
+        'GBP': new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }),
+        'XAF': new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 })
     };
+    
+    if (currency === 'XAF') {
+        return `${formatters[currency].format(amount)} ${currency}`;
+    }
     
     return formatters[currency] ? formatters[currency].format(amount) : `${amount} ${currency}`;
 }
 
 function formatDate(date, format = 'DD/MM/YYYY') {
-    const d = new Date(date);
+    if (!date) return 'N/A';
+    
+    let d;
+    
+    // Gérer différents formats de dates
+    if (typeof date === 'string') {
+        // Si c'est une chaîne, essayer de la convertir
+        d = new Date(date);
+    } else if (date && typeof date === 'object' && date.seconds !== undefined) {
+        // Si c'est un Timestamp Firestore avec seconds
+        d = new Date(date.seconds * 1000);
+    } else if (date && typeof date === 'object' && date._seconds !== undefined) {
+        // Si c'est un Timestamp Firestore avec _seconds
+        d = new Date(date._seconds * 1000);
+    } else if (date instanceof Date) {
+        // Si c'est déjà un objet Date
+        d = date;
+    } else {
+        // Essayer de convertir en Date
+        d = new Date(date);
+    }
+    
+    // Vérifier si la date est valide
+    if (isNaN(d.getTime())) {
+        console.warn('Date invalide:', date, 'Type:', typeof date);
+        return 'Date invalide';
+    }
+    
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
@@ -1081,5 +1461,627 @@ function formatDate(date, format = 'DD/MM/YYYY') {
         default:
             return `${day}/${month}/${year}`;
     }
+}
+
+// ========================================
+// GESTION DES MÉTHODES DE PAIEMENT
+// ========================================
+
+// Variables globales pour les méthodes de paiement
+let paymentMethodTypes = [];
+let userPaymentMethods = [];
+
+// Chargement des méthodes de paiement
+function loadPaymentMethods() {
+    console.log('💳 Chargement des méthodes de paiement...');
+    
+    // Charger les types de méthodes de paiement
+    fetch('/parametres/payment-methods/types')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.types) {
+                console.log('✅ Types de méthodes de paiement chargés:', data.data.types);
+                paymentMethodTypes = data.data.types;
+                populatePaymentMethodTypes();
+            } else {
+                console.log('⚠️ Aucun type de méthode de paiement trouvé');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur lors du chargement des types de méthodes de paiement:', error);
+        });
+    
+    // Charger les méthodes de paiement de l'utilisateur
+    fetch('/parametres/payment-methods')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.paymentMethods) {
+                console.log('✅ Méthodes de paiement chargées:', data.data.paymentMethods);
+                userPaymentMethods = data.data.paymentMethods;
+                renderPaymentMethods();
+            } else {
+                console.log('⚠️ Aucune méthode de paiement trouvée');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur lors du chargement des méthodes de paiement:', error);
+        });
+}
+
+// Remplir le select des types de méthodes de paiement
+function populatePaymentMethodTypes() {
+    const select = document.getElementById('paymentMethodType');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Sélectionner un type</option>';
+    
+    paymentMethodTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type.id;
+        option.textContent = type.name;
+        select.appendChild(option);
+    });
+    
+    // Cloner le select pour supprimer tous les gestionnaires d'événements existants
+    const newSelect = select.cloneNode(true);
+    select.parentNode.replaceChild(newSelect, select);
+    
+    // Ajouter notre gestionnaire d'événements spécifique
+    newSelect.addEventListener('change', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log('🎯 Gestionnaire spécifique déclenché pour paymentMethodType');
+        updatePaymentMethodFields();
+    });
+}
+
+// Mettre à jour les champs selon le type sélectionné
+function updatePaymentMethodFields() {
+    console.log('🔄 Mise à jour des champs de méthode de paiement...');
+    
+    const typeSelect = document.getElementById('paymentMethodType');
+    const fieldsContainer = document.getElementById('paymentMethodFields');
+    
+    if (!typeSelect || !fieldsContainer) {
+        console.log('⚠️ Éléments non trouvés');
+        return;
+    }
+    
+    const selectedType = typeSelect.value;
+    console.log('📋 Type sélectionné:', selectedType);
+    
+    const methodType = paymentMethodTypes.find(t => t.id === selectedType);
+    
+    if (!methodType) {
+        console.log('⚠️ Type de méthode non trouvé, vidage des champs');
+        fieldsContainer.innerHTML = '';
+        return;
+    }
+    
+    console.log('✅ Génération des champs pour:', methodType.name);
+    
+    // Générer les champs selon les paramètres du type
+    fieldsContainer.innerHTML = methodType.parameters.map(param => `
+        <div class="form-group">
+            <label for="${param.name}">${param.label}${param.required ? ' *' : ''}</label>
+            <input 
+                type="${param.type}" 
+                id="${param.name}" 
+                name="${param.name}" 
+                placeholder="${param.placeholder}"
+                ${param.required ? 'required' : ''}
+                ${param.validation?.pattern ? `pattern="${param.validation.pattern}"` : ''}
+                ${param.validation?.minLength ? `minlength="${param.validation.minLength}"` : ''}
+            >
+            ${param.validation?.message ? `<small class="help-text">${param.validation.message}</small>` : ''}
+        </div>
+    `).join('');
+    
+    console.log('✅ Champs générés avec succès');
+}
+
+// Afficher le modal d'ajout de méthode de paiement
+function showAddPaymentMethodModal() {
+    const modal = document.getElementById('addPaymentMethodModal');
+    if (modal) {
+        modal.classList.add('show');
+        // Réinitialiser le formulaire
+        document.getElementById('addPaymentMethodForm').reset();
+        document.getElementById('paymentMethodFields').innerHTML = '';
+    }
+}
+
+// Fermer le modal d'ajout de méthode de paiement
+function closeAddPaymentMethodModal() {
+    const modal = document.getElementById('addPaymentMethodModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// Ajouter une méthode de paiement
+function addPaymentMethod() {
+    const form = document.getElementById('addPaymentMethodForm');
+    const formData = new FormData(form);
+    
+    const type = formData.get('type');
+    const isDefault = formData.get('isDefault') === 'on';
+    
+    if (!type) {
+        showNotification('Veuillez sélectionner un type de méthode de paiement', 'error');
+        return;
+    }
+    
+    // Récupérer les paramètres
+    const parameters = {};
+    const methodType = paymentMethodTypes.find(t => t.id === type);
+    
+    if (methodType) {
+        methodType.parameters.forEach(param => {
+            const value = formData.get(param.name);
+            if (value) {
+                parameters[param.name] = value;
+            }
+        });
+    }
+    
+    // Valider les paramètres requis
+    const missingParams = methodType.parameters.filter(param => 
+        param.required && (!parameters[param.name] || parameters[param.name].trim() === '')
+    );
+    
+    if (missingParams.length > 0) {
+        showNotification(`Veuillez remplir tous les champs requis: ${missingParams.map(p => p.label).join(', ')}`, 'error');
+        return;
+    }
+    
+    // Afficher le loader
+    const addButton = document.querySelector('#addPaymentMethodModal .btn-primary');
+    const originalContent = addButton.innerHTML;
+    addButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ajout en cours...';
+    addButton.disabled = true;
+    
+    // Faire l'appel API
+    fetch('/parametres/payment-methods', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: type,
+            parameters: parameters,
+            isDefault: isDefault
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restaurer le bouton
+        addButton.innerHTML = originalContent;
+        addButton.disabled = false;
+        
+        if (data.success) {
+            // Fermer le modal
+            closeAddPaymentMethodModal();
+            
+            // Recharger les méthodes de paiement
+            loadPaymentMethods();
+            
+            // Afficher la notification de succès
+            showNotification(data.message || 'Méthode de paiement ajoutée avec succès', 'success');
+        } else {
+            // Afficher les erreurs
+            if (data.errors && data.errors.length > 0) {
+                showNotification(data.errors.join(', '), 'error');
+            } else {
+                showNotification(data.message || 'Erreur lors de l\'ajout de la méthode de paiement', 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erreur lors de l\'ajout de la méthode de paiement:', error);
+        
+        // Restaurer le bouton
+        addButton.innerHTML = originalContent;
+        addButton.disabled = false;
+        
+        // Afficher l'erreur
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    });
+}
+
+// Afficher les méthodes de paiement
+function renderPaymentMethods() {
+    const container = document.getElementById('paymentMethodsList');
+    if (!container) return;
+    
+    if (userPaymentMethods.length === 0) {
+        container.innerHTML = `
+            <div class="no-payment-methods">
+                <i class="fas fa-credit-card" style="font-size: 3rem; color: #64748b; margin-bottom: 1rem; display: block;"></i>
+                <p style="text-align: center; color: #64748b;">Aucune méthode de paiement configurée</p>
+                <p style="text-align: center; color: #64748b; font-size: 0.9rem;">Ajoutez une méthode de paiement pour faciliter vos transactions.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = userPaymentMethods.map(method => {
+        const methodType = paymentMethodTypes.find(t => t.id === method.type);
+        const iconClass = methodType?.icon || 'fas fa-credit-card';
+        const iconColor = methodType?.color || '#64748b';
+        
+        let displayText = '';
+        if (method.maskedData) {
+            if (method.type === 'visa') {
+                displayText = `${method.maskedData.cardNumber} - Expire ${method.maskedData.expiryDate}`;
+            } else if (method.type === 'airtel_money' || method.type === 'mobicash') {
+                displayText = method.maskedData.phoneNumber;
+            }
+        }
+        
+        return `
+            <div class="payment-method-card ${method.isDefault ? 'default' : ''}">
+                <div class="payment-method-info">
+                    <div class="payment-method-icon" style="background-color: ${iconColor};">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <div class="payment-method-details">
+                        <h4>${method.typeName}${method.isDefault ? '<span class="default-badge">Par défaut</span>' : ''}</h4>
+                        <p>${displayText}</p>
+                    </div>
+                </div>
+                <div class="payment-method-actions">
+                    ${!method.isDefault ? 
+                        `<button class="btn-secondary" onclick="setDefaultPaymentMethod('${method.id}')">
+                            <i class="fas fa-star"></i> Définir par défaut
+                        </button>` : ''
+                    }
+                    <button class="btn-danger" onclick="deletePaymentMethod('${method.id}')">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Supprimer une méthode de paiement
+function deletePaymentMethod(paymentMethodId) {
+    const method = userPaymentMethods.find(m => m.id === paymentMethodId);
+    if (!method) {
+        showNotification('Méthode de paiement non trouvée', 'error');
+        return;
+    }
+    
+    // Afficher la modal de confirmation
+    showConfirmationModal({
+        title: 'Supprimer la méthode de paiement',
+        content: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <i class="fas fa-trash" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">Êtes-vous sûr de vouloir supprimer cette méthode de paiement ?</p>
+                <p style="color: #6b7280; font-size: 0.9rem;">${method.typeName} - Cette action est irréversible.</p>
+            </div>
+        `,
+        onConfirm: () => {
+            closeConfirmationModal();
+            executeDeletePaymentMethod(paymentMethodId);
+        }
+    });
+}
+
+// Exécuter la suppression de la méthode de paiement
+function executeDeletePaymentMethod(paymentMethodId) {
+    fetch(`/parametres/payment-methods/${paymentMethodId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Recharger les méthodes de paiement
+            loadPaymentMethods();
+            
+            // Afficher la notification de succès
+            showNotification(data.message || 'Méthode de paiement supprimée avec succès', 'success');
+        } else {
+            // Afficher l'erreur
+            showNotification(data.message || 'Erreur lors de la suppression de la méthode de paiement', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erreur lors de la suppression de la méthode de paiement:', error);
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    });
+}
+
+// Définir une méthode de paiement par défaut
+function setDefaultPaymentMethod(paymentMethodId) {
+    const method = userPaymentMethods.find(m => m.id === paymentMethodId);
+    if (!method) {
+        showNotification('Méthode de paiement non trouvée', 'error');
+        return;
+    }
+    
+    // Trouver le bouton et afficher le loader
+    const button = document.querySelector(`button[onclick="setDefaultPaymentMethod('${paymentMethodId}')"]`);
+    const originalContent = button.innerHTML;
+    
+    // Afficher le loader
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Définition...';
+    button.disabled = true;
+    
+    fetch(`/parametres/payment-methods/${paymentMethodId}/set-default`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restaurer le bouton
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        if (data.success) {
+            // Recharger les méthodes de paiement
+            loadPaymentMethods();
+            
+            // Afficher la notification de succès
+            showNotification(data.message || 'Méthode de paiement par défaut mise à jour', 'success');
+        } else {
+            // Afficher l'erreur
+            showNotification(data.message || 'Erreur lors de la mise à jour de la méthode par défaut', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erreur lors de la mise à jour de la méthode par défaut:', error);
+        
+        // Restaurer le bouton
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        showNotification('Erreur de connexion. Veuillez réessayer.', 'error');
+    });
+}
+
+// ========================================
+// GESTION DE L'HISTORIQUE DE FACTURATION
+// ========================================
+
+// Variables globales pour l'historique de facturation
+let billingHistory = [];
+let billingStats = {};
+
+// Chargement de l'historique de facturation
+function loadBillingHistory() {
+    console.log('📊 Chargement de l\'historique de facturation...');
+    
+    // Charger l'historique
+    fetch('/parametres/billing/history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.history) {
+                console.log('✅ Historique de facturation chargé:', data.data.history.length, 'entrées');
+                billingHistory = data.data.history;
+                renderBillingHistory();
+            } else {
+                console.log('⚠️ Aucun historique de facturation trouvé');
+                renderBillingHistory();
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur lors du chargement de l\'historique de facturation:', error);
+            renderBillingHistory();
+        });
+    
+    // Charger les statistiques
+    fetch('/parametres/billing/history/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.stats) {
+                console.log('✅ Statistiques de facturation chargées:', data.data.stats);
+                billingStats = data.data.stats;
+                renderBillingStats();
+            } else {
+                console.log('⚠️ Aucune statistique de facturation trouvée');
+                renderBillingStats();
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur lors du chargement des statistiques de facturation:', error);
+            renderBillingStats();
+        });
+}
+
+// Afficher les statistiques de facturation
+function renderBillingStats() {
+    const container = document.getElementById('billingStats');
+    if (!container) return;
+    
+    if (!billingStats || Object.keys(billingStats).length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${billingStats.totalInvoices || 0}</div>
+            <div class="stat-label">Factures</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${billingStats.paidInvoices || 0}</div>
+            <div class="stat-label">Payées</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${billingStats.pendingInvoices || 0}</div>
+            <div class="stat-label">En attente</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${formatCurrency(billingStats.totalPaid || 0, 'XAF')}</div>
+            <div class="stat-label">Total payé</div>
+        </div>
+    `;
+}
+
+// Afficher l'historique de facturation
+function renderBillingHistory() {
+    const container = document.getElementById('billingHistoryList');
+    if (!container) return;
+    
+    if (!billingHistory || billingHistory.length === 0) {
+        container.innerHTML = `
+            <div class="no-billing-history">
+                <i class="fas fa-receipt"></i>
+                <p>Aucun historique de facturation</p>
+                <p style="font-size: 0.9rem;">Vos factures apparaîtront ici une fois que vous aurez souscrit à un plan.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Debug: Afficher les données reçues
+    console.log('📊 Données d\'historique reçues:', billingHistory);
+    if (billingHistory.length > 0) {
+        console.log('📅 Premier élément - billingPeriod:', billingHistory[0].billingPeriod);
+        console.log('📅 Premier élément - dueDate:', billingHistory[0].dueDate);
+        console.log('📅 Premier élément - paidDate:', billingHistory[0].paidDate);
+    }
+    
+    container.innerHTML = `
+        <div class="billing-history-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Facture</th>
+                        <th>Période</th>
+                        <th>Plan</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${billingHistory.map(invoice => `
+                        <tr>
+                            <td>
+                                <div class="invoice-number">${invoice.invoiceNumber}</div>
+                                <div class="invoice-description">${invoice.description}</div>
+                            </td>
+                            <td>
+                                <div>${formatDate(invoice.billingPeriod.startDate, 'DD/MM/YYYY')}</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">au ${formatDate(invoice.billingPeriod.endDate, 'DD/MM/YYYY')}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 500;">${invoice.planName}</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">${invoice.propertiesCount} propriété(s)</div>
+                            </td>
+                            <td>
+                                <div class="invoice-amount">${formatCurrency(invoice.amount, invoice.currency)}</div>
+                                ${invoice.paidDate ? `<div style="font-size: 0.875rem; color: #6b7280;">Payé le ${formatDate(invoice.paidDate, 'DD/MM/YYYY')}</div>` : ''}
+                            </td>
+                            <td>
+                                <span class="invoice-status ${invoice.status}">
+                                    ${getStatusIcon(invoice.status)}
+                                    ${getStatusText(invoice.status)}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="invoice-actions">
+                                    <button class="btn-secondary" onclick="downloadInvoice('${invoice.id}')" title="Télécharger la facture">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    ${invoice.status === 'pending' ? `
+                                        <button class="btn-primary" onclick="payInvoice('${invoice.id}')" title="Payer maintenant">
+                                            <i class="fas fa-credit-card"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+// Obtenir l'icône du statut
+function getStatusIcon(status) {
+    const icons = {
+        'paid': '<i class="fas fa-check-circle"></i>',
+        'pending': '<i class="fas fa-clock"></i>',
+        'failed': '<i class="fas fa-times-circle"></i>',
+        'cancelled': '<i class="fas fa-ban"></i>'
+    };
+    return icons[status] || '<i class="fas fa-question-circle"></i>';
+}
+
+// Obtenir le texte du statut
+function getStatusText(status) {
+    const texts = {
+        'paid': 'Payé',
+        'pending': 'En attente',
+        'failed': 'Échoué',
+        'cancelled': 'Annulé'
+    };
+    return texts[status] || 'Inconnu';
+}
+
+// Télécharger une facture
+function downloadInvoice(invoiceId) {
+    const invoice = billingHistory.find(inv => inv.id === invoiceId);
+    if (!invoice) {
+        showNotification('Facture non trouvée', 'error');
+        return;
+    }
+    
+    // Simuler le téléchargement
+    showNotification(`Téléchargement de la facture ${invoice.invoiceNumber}...`, 'info');
+    
+    // Ici, vous pourriez faire un appel API pour générer et télécharger le PDF
+    setTimeout(() => {
+        showNotification('Facture téléchargée avec succès', 'success');
+    }, 1000);
+}
+
+// Payer une facture en attente
+function payInvoice(invoiceId) {
+    const invoice = billingHistory.find(inv => inv.id === invoiceId);
+    if (!invoice) {
+        showNotification('Facture non trouvée', 'error');
+        return;
+    }
+    
+    // Afficher la modal de confirmation de paiement
+    showConfirmationModal({
+        title: 'Payer la facture',
+        content: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <i class="fas fa-credit-card" style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem;"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">Confirmer le paiement de la facture</p>
+                <p style="color: #6b7280; font-size: 0.9rem;">${invoice.invoiceNumber} - ${formatCurrency(invoice.amount, invoice.currency)}</p>
+            </div>
+        `,
+        onConfirm: () => {
+            closeConfirmationModal();
+            executePayment(invoiceId);
+        }
+    });
+}
+
+// Exécuter le paiement
+function executePayment(invoiceId) {
+    // Simuler le paiement
+    showNotification('Traitement du paiement en cours...', 'info');
+    
+    setTimeout(() => {
+        // Mettre à jour l'historique local
+        const invoice = billingHistory.find(inv => inv.id === invoiceId);
+        if (invoice) {
+            invoice.status = 'paid';
+            invoice.paidDate = new Date();
+            renderBillingHistory();
+            renderBillingStats();
+        }
+        
+        showNotification('Paiement effectué avec succès', 'success');
+    }, 2000);
 } 
  

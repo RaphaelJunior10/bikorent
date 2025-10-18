@@ -778,7 +778,7 @@
                     </div>
                     <div class="detail-item">
                         <i class="fas fa-euro-sign"></i>
-                        <span><strong>Loyer mensuel:</strong> €<%= property.monthlyRent %></span>
+                        <span><strong>Loyer mensuel:</strong> FCFA <%= property.monthlyRent %></span>
                     </div>
                     <% if (property.tenant) { %>
                     <div class="detail-item">
@@ -804,7 +804,7 @@
                     <div class="form-group">
                         <label for="totalAmount">Montant total</label>
                         <div class="amount-display">
-                            <span class="currency">€</span>
+                            <span class="currency">FCFA </span>
                             <span id="totalAmount" class="amount">0</span>
                         </div>
                         <small class="form-help">Calculé automatiquement: Loyer mensuel × Nombre de mois</small>
@@ -835,15 +835,15 @@
                     <div class="payment-summary">
                         <div class="summary-item">
                             <span class="label">Montant du loyer:</span>
-                            <span class="value" id="mobidycAmount">€0.00</span>
+                            <span class="value" id="mobidycAmount">FCFA 0.00</span>
                         </div>
                         <div class="summary-item">
                             <span class="label">Frais de service:</span>
-                            <span class="value" id="mobidycFees">€0.00</span>
+                            <span class="value" id="mobidycFees">FCFA 0.00</span>
                         </div>
                         <div class="summary-item total">
                             <span class="label">Total à payer:</span>
-                            <span class="value" id="mobidycTotal">€0.00</span>
+                            <span class="value" id="mobidycTotal">FCFA 0.00</span>
                         </div>
                     </div>
                     
@@ -1017,9 +1017,9 @@
                 document.getElementById('totalAmount').textContent = total.toFixed(2);
                 
                 // Mettre à jour le récapitulatif Mobidyc
-                document.getElementById('mobidycAmount').textContent = `€${total.toFixed(2)}`;
-                document.getElementById('mobidycFees').textContent = '€0.00';
-                document.getElementById('mobidycTotal').textContent = `€${total.toFixed(2)}`;
+                document.getElementById('mobidycAmount').textContent = `FCFA ${total.toFixed(2)}`;
+                document.getElementById('mobidycFees').textContent = 'FCFA 0.00';
+                document.getElementById('mobidycTotal').textContent = `FCFA ${total.toFixed(2)}`;
             }
         }
 
@@ -1117,7 +1117,7 @@
             console.log('paymentData', paymentData);
             //return;
             // Envoyer la requête au même backend que les autres paiements
-            fetch('/paiements/process-especes-payment', {
+            fetch('/paiements/paiement-externe/' + propertyId, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1132,7 +1132,7 @@
                     successDiv.className = 'success-message';
                     successDiv.innerHTML = `
                         <i class="fas fa-check-circle"></i>
-                        ${data.message} - Montant: €${data.amount}
+                        ${data.message} - Montant: FCFA ${data.amount}
                     `;
                     document.querySelector('.payment-section').insertBefore(successDiv, document.querySelector('.payment-form'));
                     
@@ -1140,6 +1140,7 @@
                     document.getElementById('months').value = 1;
                     document.getElementById('commentaire').value = '';
                     calculateAmount();
+                    showNotification('Paiement effectué avec succès', 'success');
                     
                     // Recharger la page après 3 secondes
                     setTimeout(() => {
@@ -1321,7 +1322,7 @@
                     'Propriété': propertyName,
                     'Méthode': method,
                     'Nombre de mois': months,
-                    'Montant total': `€${total.toFixed(2)}`
+                    'Montant total': `FCFA ${total.toFixed(2)}`
                 },
                 onConfirm: () => {
                     processPayment();

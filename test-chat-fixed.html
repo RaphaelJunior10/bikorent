@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chat Corrigé - BikoRent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .test-error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .user-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .user-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .user-card h4 {
+            margin: 0 0 10px 0;
+            color: #2563eb;
+        }
+        .user-info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .conversation-list {
+            margin-top: 15px;
+        }
+        .conversation-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        .conversation-item h4 {
+            margin: 0 0 10px 0;
+            color: #2563eb;
+        }
+        .conversation-meta {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .conversation-preview {
+            font-size: 0.9rem;
+            color: #333;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Test du Chat Corrigé - BikoRent</h1>
+        
+        <div class="test-section">
+            <h3>✅ Corrections Apportées</h3>
+            <ul>
+                <li><strong>IDs Utilisateurs :</strong> Utilisation des vrais IDs d'utilisateurs existants</li>
+                <li><strong>Requêtes Firebase :</strong> Simplification pour éviter les erreurs d'index</li>
+                <li><strong>Utilisateurs de Test :</strong> Création de 5 locataires avec profils complets</li>
+                <li><strong>Messages :</strong> 15 messages répartis sur 5 propriétés</li>
+                <li><strong>Relations :</strong> Chaque conversation a un sender et un receiver clairs</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>👥 Utilisateurs Créés</h3>
+            <div class="user-list">
+                <div class="user-card">
+                    <h4>Marie Dubois (TENANT001)</h4>
+                    <div class="user-info">
+                        <strong>Email :</strong> marie.dubois@email.com<br>
+                        <strong>Profession :</strong> Ingénieure<br>
+                        <strong>Loyer :</strong> 1200€/mois<br>
+                        <strong>Propriété :</strong> Appartement T3 - Paris 15ème
+                    </div>
+                </div>
+                <div class="user-card">
+                    <h4>Pierre Martin (TENANT002)</h4>
+                    <div class="user-info">
+                        <strong>Email :</strong> pierre.martin@email.com<br>
+                        <strong>Profession :</strong> Développeur<br>
+                        <strong>Loyer :</strong> 800€/mois<br>
+                        <strong>Propriété :</strong> Studio - Lyon 2ème
+                    </div>
+                </div>
+                <div class="user-card">
+                    <h4>Sophie Leroy (TENANT003)</h4>
+                    <div class="user-info">
+                        <strong>Email :</strong> sophie.leroy@email.com<br>
+                        <strong>Profession :</strong> Architecte<br>
+                        <strong>Loyer :</strong> 1500€/mois<br>
+                        <strong>Propriété :</strong> Maison T4 - Marseille
+                    </div>
+                </div>
+                <div class="user-card">
+                    <h4>Lucas Bernard (TENANT004)</h4>
+                    <div class="user-info">
+                        <strong>Email :</strong> lucas.bernard@email.com<br>
+                        <strong>Profession :</strong> Chef de projet<br>
+                        <strong>Loyer :</strong> 1100€/mois<br>
+                        <strong>Propriété :</strong> Appartement T2 - Nice
+                    </div>
+                </div>
+                <div class="user-card">
+                    <h4>Emma Rousseau (TENANT005)</h4>
+                    <div class="user-info">
+                        <strong>Email :</strong> emma.rousseau@email.com<br>
+                        <strong>Profession :</strong> Designer<br>
+                        <strong>Loyer :</strong> 900€/mois<br>
+                        <strong>Propriété :</strong> Loft T3 - Bordeaux
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💬 Conversations Créées</h3>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <h4>Appartement T3 - Paris 15ème</h4>
+                    <div class="conversation-meta">Participants: Marie Dubois ↔ Admin BikoRent</div>
+                    <div class="conversation-preview">"Et y a-t-il des charges en plus ?"</div>
+                    <div class="conversation-meta">4 messages • 2 non lus</div>
+                </div>
+                <div class="conversation-item">
+                    <h4>Studio - Lyon 2ème</h4>
+                    <div class="conversation-meta">Participants: Pierre Martin ↔ Admin BikoRent</div>
+                    <div class="conversation-preview">"Merci pour votre réponse rapide ! Je peux venir demain après-midi."</div>
+                    <div class="conversation-meta">3 messages • Tous lus</div>
+                </div>
+                <div class="conversation-item">
+                    <h4>Maison T4 - Marseille</h4>
+                    <div class="conversation-meta">Participants: Sophie Leroy ↔ Admin BikoRent</div>
+                    <div class="conversation-preview">"J'aimerais aussi savoir si le jardin est inclus dans le loyer."</div>
+                    <div class="conversation-meta">2 messages • 1 non lu</div>
+                </div>
+                <div class="conversation-item">
+                    <h4>Appartement T2 - Nice</h4>
+                    <div class="conversation-meta">Participants: Lucas Bernard ↔ Admin BikoRent</div>
+                    <div class="conversation-preview">"Parfait ! Je peux venir ce weekend si c'est possible."</div>
+                    <div class="conversation-meta">3 messages • 1 non lu</div>
+                </div>
+                <div class="conversation-item">
+                    <h4>Loft T3 - Bordeaux</h4>
+                    <div class="conversation-meta">Participants: Emma Rousseau ↔ Admin BikoRent</div>
+                    <div class="conversation-preview">"Quel est le montant des charges mensuelles ?"</div>
+                    <div class="conversation-meta">3 messages • 1 non lu</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Tests à Effectuer</h3>
+            <a href="http://localhost:3000/chat" class="test-button" target="_blank">Ouvrir le Chat</a>
+            <a href="http://localhost:3000/dashboard" class="test-button" target="_blank">Dashboard</a>
+            <button class="test-button" onclick="testAPI()">Tester l'API</button>
+            <button class="test-button" onclick="testUnreadCount()">Tester le Compteur</button>
+            <button class="test-button" onclick="testUsers()">Tester les Utilisateurs</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📱 Instructions de Test</h3>
+            <ol>
+                <li><strong>Badge :</strong> Vérifiez que le badge affiche le bon nombre de messages non lus (5)</li>
+                <li><strong>Conversations :</strong> Les 5 conversations doivent s'afficher avec les bons noms</li>
+                <li><strong>Messages :</strong> Cliquez sur une conversation pour voir les messages</li>
+                <li><strong>Envoi :</strong> Testez l'envoi de nouveaux messages</li>
+                <li><strong>Responsive :</strong> Testez sur mobile avec les outils de développement</li>
+                <li><strong>Navigation :</strong> Vérifiez la navigation entre liste et conversation</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 Corrections Techniques</h3>
+            <ul>
+                <li><strong>Requêtes Firebase :</strong> Utilisation de getAll() + filtrage côté client</li>
+                <li><strong>Index :</strong> Plus d'erreurs d'index Firebase</li>
+                <li><strong>IDs :</strong> Utilisation de U7h4HU5OfB9KTeY341NE pour l'admin</li>
+                <li><strong>Relations :</strong> Chaque message a un senderId et recipientId clairs</li>
+                <li><strong>Données :</strong> Utilisateurs créés dans la collection users</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test de l\'API en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat/api/unread-count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    results.innerHTML = `
+                        <div class="test-result">
+                            ✅ API fonctionnelle<br>
+                            Messages non lus: ${data.unreadCount}<br>
+                            <strong>Attendu :</strong> 5 messages non lus
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = '<div class="test-result test-error">❌ Erreur API</div>';
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="test-result test-error">❌ Erreur de connexion</div>';
+            }
+        }
+        
+        async function testUnreadCount() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test du compteur en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat/api/unread-count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const badge = document.getElementById('unreadMessagesBadge');
+                    if (badge) {
+                        badge.textContent = data.unreadCount;
+                        badge.style.display = data.unreadCount > 0 ? 'flex' : 'none';
+                    }
+                    
+                    const expectedCount = 5;
+                    const status = data.unreadCount === expectedCount ? '✅' : '⚠️';
+                    
+                    results.innerHTML = `
+                        <div class="test-result">
+                            ${status} Compteur mis à jour<br>
+                            Messages non lus: ${data.unreadCount} (attendu: ${expectedCount})
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = '<div class="test-result test-error">❌ Erreur compteur</div>';
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="test-result test-error">❌ Erreur de connexion</div>';
+            }
+        }
+        
+        async function testUsers() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test des utilisateurs en cours...</div>';
+            
+            try {
+                // Test de récupération des conversations
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                if (text.includes('Marie Dubois') && text.includes('Pierre Martin')) {
+                    results.innerHTML = `
+                        <div class="test-result">
+                            ✅ Utilisateurs correctement affichés<br>
+                            Les noms des locataires sont présents dans la page
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Utilisateurs partiellement affichés<br>
+                            Vérifiez manuellement l'affichage des noms
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="test-result test-error">❌ Erreur de connexion</div>';
+            }
+        }
+        
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html>

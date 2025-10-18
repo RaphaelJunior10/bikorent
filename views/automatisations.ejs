@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    
+    <div class="main-content">
+        <header class="header">
+            <!--<div class="header-content">
+                <button class="menu-btn" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="header-title"><%= pageTitle %></h1>
+            </div>-->
+        </header>
+
+        <div class="page-container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-bolt"></i>
+                    Automatisations
+                </h1>
+                <p class="page-subtitle">Automatisez vos tâches rapidement et facilement</p>
+            </div>
+
+            <div class="automations-grid">
+                <% automations.forEach(function(auto) { %>
+                <div class="automation-card" data-automation-id="<%= auto.id %>">
+                    <div class="automation-icon" style="background-color: <%= auto.color %>;">
+                        <i class="fas <%= auto.icon %>"></i>
+                    </div>
+                    <div class="automation-info">
+                        <h3><%= auto.name || auto.title %></h3>
+                        <p><%= auto.description %></p>
+                        <span class="category-badge"><%= auto.category %></span>
+                    </div>
+                    <div class="automation-controls">
+                        <div class="toggle-container">
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="toggle-input" 
+                                       data-automation-id="<%= auto.id %>"
+                                       <%= auto.userIsActive ? 'checked' : '' %>>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">
+                                <%= auto.userIsActive ? 'Activée' : 'Désactivée' %>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+
+            <div class="help-box">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <h3>Comment utiliser les automatisations ?</h3>
+                    <p>Cliquez sur "Activer" pour créer votre automatisation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/sidebar.js"></script>
+    
+    <script>
+        // Gérer les toggles d'automatisation
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Vérification des toggles au chargement:');
+            const toggles = document.querySelectorAll('.toggle-input');
+            toggles.forEach(toggle => {
+                console.log(`  - ${toggle.dataset.automationId}: checked = ${toggle.checked}`);
+            });
+            
+            toggles.forEach(toggle => {
+                toggle.addEventListener('change', async function() {
+                    const automationId = this.dataset.automationId;
+                    const isActive = this.checked;
+                    const labelSpan = this.closest('.toggle-container').querySelector('.toggle-label');
+                    const originalLabel = labelSpan.textContent;
+                    
+                    console.log('🔄 Toggle changé:', automationId, 'vers', isActive);
+                    
+                    // Désactiver temporairement
+                    this.disabled = true;
+                    labelSpan.textContent = 'Mise à jour...';
+                    
+                    try {
+                        console.log('📡 Envoi requête API...');
+                        const response = await fetch('/automatisations/api/toggle/' + automationId, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ isActive: isActive })
+                        });
+                        
+                        console.log('📊 Réponse API:', response.status);
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            labelSpan.textContent = isActive ? 'Activée' : 'Désactivée';
+                            showNotification(result.message, 'success');
+                        } else {
+                            // Restaurer l'état précédent
+                            this.checked = !isActive;
+                            labelSpan.textContent = originalLabel;
+                            showNotification(result.message, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Erreur:', error);
+                        // Restaurer l'état précédent
+                        this.checked = !isActive;
+                        labelSpan.textContent = originalLabel;
+                        showNotification('Erreur lors de la mise à jour', 'error');
+                    } finally {
+                        this.disabled = false;
+                    }
+                });
+            });
+        });
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const icon = type === 'success' ? 'check-circle' : 
+                        type === 'error' ? 'exclamation-circle' : 'info-circle';
+            const bgColor = type === 'success' ? '#10b981' : 
+                           type === 'error' ? '#ef4444' : '#3b82f6';
+            
+            notification.innerHTML = '<i class="fas fa-' + icon + '"></i> ' + message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                background: ${bgColor};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    </script>
+    
+    <style>
+        .automations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .automation-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .automation-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .automation-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        .automation-info h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .automation-info p {
+            margin: 0 0 1rem 0;
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #f3f4f6;
+            color: #666;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .automation-controls {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.4s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        .toggle-input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+
+        .toggle-input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .help-box {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: white;
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .help-box i {
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .help-box h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.3rem;
+        }
+
+        .help-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .automations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .help-box {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</body>
+</html>

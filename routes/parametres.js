@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const dataService = require('../services/dataService');
 const { firestoreUtils, storageUtils, COLLECTIONS } = require('../config/firebase');
+const { getAdmin } = require('../config/firebase-admin');
 
 // Fonction pour uploader une photo de profil vers Firebase Storage
 async function uploadProfilePhotoToFirebaseStorage(base64Image, userId) {
@@ -166,8 +167,9 @@ router.get('/', async (req, res) => {
         console.log('🔄 Récupération des données des paramètres depuis la base de données...');
         
         // Récupérer les données depuis la base de données via le service
-        const parametresData = await dataService.getParametresData();
-        
+        const parametresData = await dataService.getParametresData(req.session.user.id);
+        const userDu = await dataService.getUserDu(req.session.user.id);
+        console.log('🔍 Montant dû:', userDu);
         if (parametresData) {
             console.log('✅ Données des paramètres récupérées avec succès depuis la base de données');
         } else {
@@ -193,7 +195,8 @@ router.get('/', async (req, res) => {
                 name: finalData.profile.firstName + ' ' + finalData.profile.lastName,
                 role: 'Propriétaire'
             },
-            parametresData: finalData
+            parametresData: finalData,
+            paymentOverdue: res.locals.paymentOverdue
         });
     } catch (error) {
         console.error('❌ Erreur lors du rendu de la page paramètres:', error);
@@ -204,10 +207,11 @@ router.get('/', async (req, res) => {
             pageTitle: 'Paramètres',
             currentPage: 'parametres',
             user: {
-                name: 'Admin',
-                role: 'Propriétaire'
+                name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Admin',
+                role: req.session.user ? req.session.user.role : 'Propriétaire'
             },
-            parametresData: parametresDataFallback
+            parametresData: parametresDataFallback,
+            paymentOverdue: res.locals.paymentOverdue
         });
     }
 });
@@ -248,7 +252,7 @@ router.post('/profile', async (req, res) => {
         
         // Récupérer l'utilisateur actuel (pour l'instant, on utilise un ID fixe)
         // Dans une vraie application, on récupérerait l'ID depuis la session/auth
-        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
         
         // Préparer les données de mise à jour
         const updateData = {
@@ -326,7 +330,7 @@ router.post('/profile/photo', async (req, res) => {
         }
         
         // Récupérer l'utilisateur actuel
-        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
         
         console.log('🔍 Tentative de mise à jour pour l\'utilisateur ID:', currentUserId);
         
@@ -458,7 +462,7 @@ router.post('/password', async (req, res) => {
         }
         
         // Récupérer l'utilisateur actuel
-        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
         const currentUser = await dataService.getUserById(currentUserId);
         
         if (!currentUser) {
@@ -477,21 +481,24 @@ router.post('/password', async (req, res) => {
             updatedAt: new Date()
         };
         
-        const updatedUser = await dataService.updateUser(currentUserId, updateData);
-        
-        if (updatedUser) {
-            console.log('✅ Mot de passe mis à jour avec succès');
-            res.json({
-                success: true,
-                message: 'Mot de passe mis à jour avec succès'
-            });
-        } else {
-            console.error('❌ Échec de la mise à jour du mot de passe');
-            res.status(500).json({
+        //const updatedUser = await dataService.updateUser(currentUserId, updateData);
+        //On verifi que le mot de passe actuel est correct
+        /*const user = await admin.auth().getUserByEmail(currentUser.email);
+        if (user.password !== currentPassword) {
+            return res.status(400).json({
                 success: false,
-                message: 'Erreur lors de la mise à jour du mot de passe'
+                message: 'Mot de passe actuel incorrect'
             });
-        }
+        }*/
+        //On met a jour le mot de passe dans Firebase Auth
+        const admin = getAdmin();
+        await admin.auth().updateUser(currentUserId, { password: newPassword });
+        
+        console.log('✅ Mot de passe mis à jour avec succès');
+        res.json({
+            success: true,
+            message: 'Mot de passe mis à jour avec succès'
+        });
         
     } catch (error) {
         console.error('❌ Erreur lors de la mise à jour du mot de passe:', error);
@@ -508,7 +515,7 @@ router.post('/logout-all', async (req, res) => {
         console.log('🚪 Déconnexion de tous les appareils demandée');
         
         // Récupérer l'utilisateur actuel
-        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
         const currentUser = await dataService.getUserById(currentUserId);
         
         if (!currentUser) {
@@ -558,7 +565,7 @@ router.post('/notifications', async (req, res) => {
         }
         
         // Récupérer l'utilisateur actuel
-        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
         const currentUser = await dataService.getUserById(currentUserId);
         
         if (!currentUser) {
@@ -572,11 +579,11 @@ router.post('/notifications', async (req, res) => {
         const updateData = {
             notifications: {
                 emailPayments: notifications.emailPayments || false,
-                /*emailOverdue: notifications.emailOverdue || false,
-                emailNewTenants: notifications.emailNewTenants || false,
-                pushAlerts: notifications.pushAlerts || false,
-                pushReminders: notifications.pushReminders || false,
-                reportFrequency: notifications.reportFrequency || "monthly"*/
+                emailOverdue: false,// notifications.emailOverdue || false,
+                emailNewTenants: false,// notifications.emailNewTenants || false,
+                pushAlerts: false,// notifications.pushAlerts || false,
+                pushReminders: false,// notifications.pushReminders || false,
+                reportFrequency: "monthly"// notifications.reportFrequency || "monthly"
             },
             updatedAt: new Date()
         };
@@ -632,7 +639,7 @@ router.post('/preferences', async (req, res) => {
         }
         
         // Récupérer l'utilisateur actuel
-        const currentUserId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
         const currentUser = await dataService.getUserById(currentUserId);
         
         if (!currentUser) {
@@ -684,5 +691,826 @@ router.post('/preferences', async (req, res) => {
     }
 });
 
+// Route pour gérer les intégrations (connexion/déconnexion)
+router.post('/integrations/:integrationId/toggle', async (req, res) => {
+    try {
+        console.log('🔗 Gestion de l\'intégration demandée');
+        
+        const { integrationId } = req.params;
+        const { action } = req.body; // 'connect' ou 'disconnect'
+        
+        // Validation des données
+        if (!integrationId || !action) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID d\'intégration et action requis'
+            });
+        }
+        
+        if (!['connect', 'disconnect'].includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Action invalide. Utilisez "connect" ou "disconnect"'
+            });
+        }
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        const currentUser = await dataService.getUserById(currentUserId);
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilisateur non trouvé'
+            });
+        }
+        
+        // Initialiser l'objet integration s'il n'existe pas
+        if (!currentUser.integration) {
+            currentUser.integration = {};
+        }
+        
+        // Mettre à jour l'état de l'intégration
+        const isConnected = action === 'connect';
+        currentUser.integration[integrationId] = {
+            connected: isConnected,
+            connectedAt: isConnected ? new Date() : null,
+            disconnectedAt: !isConnected ? new Date() : null,
+            lastUpdated: new Date()
+        };
+        if(!isConnected && integrationId === 'automations'){
+            //on desactive toutes les integrations
+            //On recupere les negration du user dans user_automations
+            const automations = await dataService.getUserAutomations(currentUserId);
+            for(const key in automations.automations){
+                automations.automations[key].isActive = false;
+            }
+            await dataService.updateUserAutomations(currentUserId, automations);
+        }
+        
+        
+        
+        // Préparer les données de mise à jour
+        const updateData = {
+            integration: currentUser.integration,
+            updatedAt: new Date()
+        };
+        
+        console.log('📝 Mise à jour de l\'intégration:', {
+            integrationId,
+            action,
+            isConnected,
+            updateData
+        });
+        //On recupere le plan de facturation dans la base de données
+        const plan = await dataService.getUserBillingPlan(currentUserId);
+        console.log('Plan de facturation:', plan);
+        if(!plan.facturation.planId.includes('enterprise')){
+            res.json({
+                success: true,
+                message: `Intégration non disponnible pour votre plan de facturation`,
+                data: {
+                    integrationId,
+                    connected: false,
+                    integration: currentUser.integration
+                }
+            });
+            return;
+        }
+        // Mettre à jour l'utilisateur dans la base de données
+        const updatedUser = await dataService.updateUser(currentUserId, updateData);
+        
+        
+        if (updatedUser) {
+            console.log('✅ Intégration mise à jour avec succès');
+            res.json({
+                success: true,
+                message: `Intégration ${isConnected ? 'connectée' : 'déconnectée'} avec succès`,
+                data: {
+                    integrationId,
+                    connected: isConnected,
+                    integration: updatedUser.integration
+                }
+            });
+        } else {
+            console.error('❌ Échec de la mise à jour de l\'intégration');
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la mise à jour de l\'intégration'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la gestion de l\'intégration:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour récupérer l'état des intégrations
+router.get('/integrations', async (req, res) => {
+    try {
+        console.log('🔗 Récupération de l\'état des intégrations');
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        const currentUser = await dataService.getUserById(currentUserId);
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilisateur non trouvé'
+            });
+        }
+        
+        // Retourner l'état des intégrations
+        res.json({
+            success: true,
+            data: {
+                integration: currentUser.integration || {}
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des intégrations:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour récupérer tous les plans de facturation
+router.get('/billing/plans', async (req, res) => {
+    try {
+        console.log('💳 Récupération des plans de facturation...');
+        
+        const billingPlans = await dataService.getBillingPlans();
+        
+        res.json({
+            success: true,
+            data: {
+                plans: billingPlans
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des plans de facturation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour changer le plan de facturation d'un utilisateur
+router.post('/billing/change-plan', async (req, res) => {
+    try {
+        console.log('💳 Changement de plan de facturation demandé');
+        
+        const { planId } = req.body;
+        
+        // Validation des données
+        if (!planId) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID du plan requis'
+            });
+        }
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        const currentUser = await dataService.getUserById(currentUserId);
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilisateur non trouvé'
+            });
+        }
+        
+        // Vérifier que le plan existe
+        const newPlan = await dataService.getBillingPlanById(planId);
+        if (!newPlan) {
+            return res.status(404).json({
+                success: false,
+                message: 'Plan de facturation non trouvé'
+            });
+        }
+        
+        // Vérifier si l'utilisateur a déjà ce plan
+        if (currentUser.facturation?.planId === planId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vous avez déjà ce plan de facturation'
+            });
+        }
+
+        //On recupere le dernier changement de plan
+        const planChange = await dataService.getPlanChange(currentUserId);
+        if(planChange.facturations?.length > 0){
+            const lastFacturation = planChange.facturations[planChange.facturations.length - 1];
+            const isDecrement = dataService.orderPlan(lastFacturation.planId, planId);
+            if(isDecrement){
+                const lastdate = new Date(lastFacturation.date);
+                //On calcule le nombre de jours entre la date du dernier changement de plan et la date actuelle
+                const daysDiff = fullDaysBetween(lastdate, new Date());
+                console.log('lastFacturation.date', lastFacturation.date);
+                console.log('isDecrement', isDecrement);
+                
+                console.log('daysDiff', daysDiff, 'lastdate', lastdate, 'new Date()', new Date());
+                
+                if(daysDiff < 30){
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Vous ne pouvez pas réduire votre plan de facturation avant 30 jours'
+                    });
+                }
+                if(currentUser.facturation?.planId === 'enterprise'){
+                    //On desactive les automatisations
+                    const user_automations = await dataService.getUserAutomations(currentUserId);
+                    for(const key in user_automations.automations){
+                        user_automations.automations[key].isActive = false;
+                    }
+                    await dataService.updateUserAutomations(currentUserId, user_automations);
+
+                    //On desactive les intégrations dans users
+                    for(const key in currentUser.integration){
+                        currentUser.integration[key].connected = false;
+                    }
+                    await dataService.updateUser(currentUserId, {
+                        integration: currentUser.integration,
+                        updatedAt: new Date()
+                    });
+                }
+            }
+        }
+        
+        // Mettre à jour le plan de facturation
+        const updatedUser = await dataService.updateUserBillingPlan(currentUserId, planId);
+        //On recupere le nombre de propriétés louées
+        const propertiesCount = await dataService.getTenants(currentUserId);
+        //On enregistre dans user_billing
+        const userBilling = await dataService.getPlanChange(currentUserId);
+        userBilling.facturations.push({
+            planId: planId,
+            propertyCount: propertiesCount,
+            date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
+        });
+        await dataService.updateUserBillingPlan2(currentUserId, userBilling);
+        
+        if (updatedUser) {
+            console.log('✅ Plan de facturation mis à jour avec succès');
+            res.json({
+                success: true,
+                message: `Plan changé vers ${newPlan.name} avec succès`,
+                data: {
+                    plan: {
+                        id: newPlan.id,
+                        name: newPlan.name,
+                        description: newPlan.description,
+                        pricePerProperty: newPlan.pricePerProperty,
+                        currency: newPlan.currency,
+                        maxProperties: newPlan.maxProperties,
+                        features: newPlan.features
+                    },
+                    userBilling: updatedUser.facturation
+                }
+            });
+        } else {
+            console.error('❌ Échec de la mise à jour du plan de facturation');
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la mise à jour du plan de facturation'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erreur lors du changement de plan de facturation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+function fullDaysBetween(date1, date2) {
+    const diffTime = Math.abs(date2.getTime() - date1.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+// Route pour récupérer les détails de facturation de l'utilisateur
+router.get('/billing/details', async (req, res) => {
+    try {
+        console.log('💳 Récupération des détails de facturation...');
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        const currentUser = await dataService.getUserById(currentUserId);
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilisateur non trouvé'
+            });
+        }
+        
+        // Récupérer le plan actuel
+        const currentPlan = await dataService.getBillingPlanById(currentUser.facturation?.planId || 'basique');
+        
+        // Calculer le coût mensuel basé sur le nombre de propriétés
+        const propertiesCount = currentUser.facturation?.propertiesCount || 0;
+        const monthlyCost = currentPlan ? propertiesCount * currentPlan.pricePerProperty : 0;
+        
+        res.json({
+            success: true,
+            data: {
+                currentPlan: currentPlan,
+                userBilling: {
+                    ...currentUser.facturation,
+                    monthlyCost: monthlyCost
+                },
+                propertiesCount: propertiesCount
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des détails de facturation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour récupérer les types de méthodes de paiement
+router.get('/payment-methods/types', async (req, res) => {
+    try {
+        console.log('💳 Récupération des types de méthodes de paiement...');
+        
+        const paymentMethodTypes = await dataService.getPaymentMethodTypes();
+        
+        res.json({
+            success: true,
+            data: {
+                types: paymentMethodTypes
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des types de méthodes de paiement:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour récupérer les méthodes de paiement de l'utilisateur
+router.get('/payment-methods', async (req, res) => {
+    try {
+        console.log('💳 Récupération des méthodes de paiement de l\'utilisateur...');
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        
+        const paymentMethods = await dataService.getUserPaymentMethods(currentUserId);
+        
+        res.json({
+            success: true,
+            data: {
+                paymentMethods: paymentMethods
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des méthodes de paiement:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour ajouter une méthode de paiement
+router.post('/payment-methods', async (req, res) => {
+    try {
+        console.log('💳 Ajout d\'une méthode de paiement...');
+        
+        const { type, parameters, isDefault } = req.body;
+        
+        // Validation des données
+        if (!type || !parameters) {
+            return res.status(400).json({
+                success: false,
+                message: 'Type et paramètres requis'
+            });
+        }
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        
+        // Récupérer le type de méthode de paiement pour validation
+        const paymentMethodTypes = await dataService.getPaymentMethodTypes();
+        const methodType = paymentMethodTypes.find(t => t.id === type);
+        
+        if (!methodType) {
+            return res.status(400).json({
+                success: false,
+                message: 'Type de méthode de paiement non trouvé'
+            });
+        }
+        
+        // Valider les paramètres selon le type
+        const validationErrors = validatePaymentMethodParameters(methodType, parameters);
+        if (validationErrors.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Paramètres invalides',
+                errors: validationErrors
+            });
+        }
+        
+        // Créer les données masquées pour l'affichage
+        const maskedData = createMaskedData(type, parameters);
+        
+        // Préparer les données de la méthode de paiement
+        const paymentMethodData = {
+            type: type,
+            typeName: methodType.name,
+            parameters: parameters,
+            maskedData: maskedData,
+            isDefault: isDefault || false
+        };
+        
+        // Ajouter la méthode de paiement
+        const newPaymentMethod = await dataService.addUserPaymentMethod(currentUserId, paymentMethodData);
+        
+        if (newPaymentMethod) {
+            console.log('✅ Méthode de paiement ajoutée avec succès');
+            res.json({
+                success: true,
+                message: 'Méthode de paiement ajoutée avec succès',
+                data: {
+                    paymentMethod: newPaymentMethod
+                }
+            });
+        } else {
+            console.error('❌ Échec de l\'ajout de la méthode de paiement');
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de l\'ajout de la méthode de paiement'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'ajout de la méthode de paiement:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour supprimer une méthode de paiement
+router.delete('/payment-methods/:paymentMethodId', async (req, res) => {
+    try {
+        console.log('💳 Suppression d\'une méthode de paiement...');
+        
+        const { paymentMethodId } = req.params;
+        
+        // Validation
+        if (!paymentMethodId) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de la méthode de paiement requis'
+            });
+        }
+        
+        // Supprimer la méthode de paiement
+        const result = await dataService.deleteUserPaymentMethod(paymentMethodId);
+        
+        if (result) {
+            console.log('✅ Méthode de paiement supprimée avec succès');
+            res.json({
+                success: true,
+                message: 'Méthode de paiement supprimée avec succès'
+            });
+        } else {
+            console.error('❌ Échec de la suppression de la méthode de paiement');
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la suppression de la méthode de paiement'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la suppression de la méthode de paiement:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour définir une méthode de paiement par défaut
+router.post('/payment-methods/:paymentMethodId/set-default', async (req, res) => {
+    try {
+        console.log('💳 Définition de la méthode de paiement par défaut...');
+        
+        const { paymentMethodId } = req.params;
+        
+        // Validation
+        if (!paymentMethodId) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de la méthode de paiement requis'
+            });
+        }
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        
+        // Définir la méthode par défaut
+        const result = await dataService.setDefaultPaymentMethod(currentUserId, paymentMethodId);
+        
+        if (result) {
+            console.log('✅ Méthode de paiement par défaut définie avec succès');
+            res.json({
+                success: true,
+                message: 'Méthode de paiement par défaut mise à jour'
+            });
+        } else {
+            console.error('❌ Échec de la définition de la méthode par défaut');
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la mise à jour de la méthode par défaut'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la définition de la méthode par défaut:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Fonction utilitaire pour valider les paramètres d'une méthode de paiement
+function validatePaymentMethodParameters(methodType, parameters) {
+    const errors = [];
+    
+    for (const param of methodType.parameters) {
+        const value = parameters[param.name];
+        
+        // Vérifier si le paramètre requis est présent
+        if (param.required && (!value || value.trim() === '')) {
+            errors.push(`${param.label} est requis`);
+            continue;
+        }
+        
+        // Vérifier la longueur minimale
+        if (value && param.validation?.minLength && value.length < param.validation.minLength) {
+            errors.push(param.validation.message || `${param.label} doit contenir au moins ${param.validation.minLength} caractères`);
+        }
+        
+        // Vérifier le pattern regex
+        if (value && param.validation?.pattern) {
+            const regex = new RegExp(param.validation.pattern);
+            if (!regex.test(value)) {
+                errors.push(param.validation.message || `${param.label} a un format invalide`);
+            }
+        }
+    }
+    
+    return errors;
+}
+
+// Fonction utilitaire pour créer les données masquées
+function createMaskedData(type, parameters) {
+    const maskedData = {};
+    
+    switch (type) {
+        case 'visa':
+            if (parameters.cardNumber) {
+                const cardNumber = parameters.cardNumber.replace(/\s/g, '');
+                maskedData.cardNumber = '**** **** **** ' + cardNumber.slice(-4);
+            }
+            if (parameters.expiryDate) {
+                maskedData.expiryDate = parameters.expiryDate;
+            }
+            break;
+        case 'airtel_money':
+        case 'mobicash':
+            if (parameters.phoneNumber) {
+                const phone = parameters.phoneNumber;
+                maskedData.phoneNumber = phone.slice(0, 7) + '***' + phone.slice(-3);
+            }
+            break;
+    }
+    
+    return maskedData;
+}
+
+// ========================================
+// ROUTES POUR L'HISTORIQUE DE FACTURATION
+// ========================================
+
+// Route pour récupérer l'historique de facturation
+router.get('/billing/history', async (req, res) => {
+    try {
+        console.log('📊 Récupération de l\'historique de facturation...');
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        
+        const { limit = 50 } = req.query;
+        
+        const billingHistory = await dataService.getBillingHistory(currentUserId, parseInt(limit));
+        
+        res.json({
+            success: true,
+            data: {
+                history: billingHistory,
+                total: billingHistory.length
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération de l\'historique de facturation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// Route pour récupérer les statistiques de facturation
+router.get('/billing/history/stats', async (req, res) => {
+    try {
+        console.log('📈 Récupération des statistiques de facturation...');
+        
+        // Récupérer l'utilisateur actuel
+        const currentUserId = req.session.user.id; // ID du propriétaire connecté
+        
+        const stats = await dataService.getBillingHistoryStats(currentUserId);
+        
+        res.json({
+            success: true,
+            data: {
+                stats: stats
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des statistiques de facturation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur',
+            error: error.message
+        });
+    }
+});
+
+// API pour traiter le paiement en retard
+router.post('/api/process-payment', async (req, res) => {
+    try {
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Non autorisé' 
+            });
+        }
+
+        
+        const amount =  (await dataService.getUserDu(req.session.user.id)).amountDue;
+        const user = await dataService.getUser(req.session.user.id);
+        if(!user.mobidyc){
+            return res.status(400).json({
+                success: false,
+                message: 'Utilisateur non trouvé, veuillez contacter l\'administrateur'
+            });
+        }
+        if (!amount || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Montant invalide'
+            });
+        }
+
+        console.log(`💳 Traitement du paiement pour ${req.session.user.id}: ${amount} FCFA`);
+        //On recuperre le moyen de paiement par defaut
+        const defaultPaymentMethod = await dataService.getDefaultPaymentMethod(req.session.user.id);
+        if (!defaultPaymentMethod) {
+            return res.status(400).json({
+                success: false,
+                message: 'Aucune méthode de paiement par défaut trouvée, veuillez en ajouter une'
+            });
+        }
+        console.log('defaultPaymentMethod', defaultPaymentMethod);
+        let phoneNumber = '';
+        if(defaultPaymentMethod.type === 'visa'){
+            const cardNumber = defaultPaymentMethod.parameters.cardNumber;
+            const expiryDate = defaultPaymentMethod.parameters.expiryDate;
+            const cvv = defaultPaymentMethod.parameters.cvv;
+        }
+        if(defaultPaymentMethod.type === 'airtel_money'){
+            phoneNumber = defaultPaymentMethod.parameters.phoneNumber;
+        }
+        if(defaultPaymentMethod.type === 'mobicash'){
+            phoneNumber = defaultPaymentMethod.parameters.phoneNumber;
+        }
+        // TODO: Intégrer avec le système de paiement réel
+        // Pour l'instant, on simule un paiement réussi
+        //const amount2 = 100;
+        const result = await dataService.singlePayement(`TXN_${Date.now()}`, user.mobidyc.serviceId, amount, phoneNumber, user.mobidyc.serviceApikey);
+        //console.log('result', result);
+        
+        const planId = user.facturation?.planId;
+        const user_billing = await dataService.getPlanChange(req.session.user.id);
+        user_billing.payments.push({
+            planId: planId,
+            amount: result.montant,
+            date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
+        });
+        await dataService.updateUserBillingPlan2(req.session.user.id, user_billing);
+
+        const propertyCount = await dataService.getTenants(req.session.user.id);
+        console.log('Mise à jour du user_billing');
+        //On recupere le dernier payement
+        const billing_history_last = await dataService.getBillingHistory(req.session.user.id, 1);
+        const endDate = new Date(billing_history_last[0].date || billing_history_last[0].dueDate);
+        //On enregistre dans billing_history
+        //const billing_history = await dataService.getBillingHistory(req.session.user.id);
+        const billing_history = {
+            planId: planId,
+            planName: planId,
+            amount: result.montant,
+            billingPeriod: {endDate: new Date(), startDate: endDate},
+            createdAt: new Date(),
+            currency: 'FCFA',
+            description: 'Facuration mensuelle - Plan ' + planId,
+            invoiceNumber: 'INV_' + Date.now(),
+            paymentMethod: defaultPaymentMethod.type,
+            paymentMethodDetails: defaultPaymentMethod.parameters,
+            status: 'paid',
+            transactionId: `TXN_${Date.now()}`,
+            propertiesCount: propertyCount.length,
+            userId: req.session.user.id,
+            userName: user.profile.firstName + ' ' + user.profile.lastName,
+            date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
+        };
+
+        //On ajoute le billing_history
+        await dataService.addBillingHistory( billing_history);
+        
+        // Simuler un délai de traitement
+        //await new Promise(resolve => setTimeout(resolve, 1000));
+
+        //On recupere l email de l utilisateur
+        const email = user.profile.email;
+
+        if(result.montant < amount){
+            await dataService.sendMail(email, 'Paiement partiel', '/parametres', 'Votre paiement pour le plan ' + planId + ' d\'une somme de ' + amount + ' FCFA n\'a pas été effectué en entier, le montant payé est de ' + result.montant + ' FCFA. Veuillez compléter le paiement en ligne sur votre compte ou contacter l\'administrateur pour compléter le paiement.');
+            return res.status(400).json({
+                success: false,
+                message: 'Le paiement n\'a pas été effectué en entier, veuillez contacter l\'administrateur'
+            });
+        }
+        //On envoie un email de confirmation de paiement
+        await dataService.sendMail(email, 'Paiement traité avec succès', '/parametres', 'Votre paiement pour le plan ' + planId + ' d\'une somme de ' + amount + ' FCFA a été traité avec succès');
+
+        // Retourner une réponse de succès
+        res.json({
+            success: true,
+            message: 'Paiement traité avec succès',
+            transactionId: `TXN_${Date.now()}`,
+            amount: result.montant,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Erreur traitement paiement:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors du traitement du paiement',
+            error: error.message
+        });
+    }
+});
 
 module.exports = router; 

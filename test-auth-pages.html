@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test des pages d'authentification - BikoRent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+        }
+        .test-section h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .test-link {
+            display: block;
+            padding: 15px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+        .test-link:hover {
+            background: #0056b3;
+        }
+        .test-link.secondary {
+            background: #6c757d;
+        }
+        .test-link.secondary:hover {
+            background: #545b62;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .form-test {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .form-test h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test des pages d'authentification - BikoRent</h1>
+        
+        <div class="status info">
+            <strong>Instructions :</strong> Ce test vous permet de vérifier le fonctionnement du système d'authentification. 
+            Testez d'abord l'inscription, puis la connexion, et observez les changements dans la navbar.
+        </div>
+
+        <div class="test-section">
+            <h2>📄 Pages d'authentification</h2>
+            <div class="test-links">
+                <a href="/login" class="test-link" target="_blank">
+                    🔐 Page de connexion
+                </a>
+                <a href="/register" class="test-link" target="_blank">
+                    📝 Page d'inscription
+                </a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🏠 Pages publiques (test de la navbar)</h2>
+            <div class="test-links">
+                <a href="/" class="test-link secondary" target="_blank">
+                    🏠 Page d'accueil
+                </a>
+                <a href="/properties" class="test-link secondary" target="_blank">
+                    🏢 Page des propriétés
+                </a>
+                <a href="/contact" class="test-link secondary" target="_blank">
+                    📞 Page de contact
+                </a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Test de l'inscription</h2>
+            <div class="form-test">
+                <h3>Créer un compte de test</h3>
+                <form id="testRegisterForm">
+                    <div class="form-group">
+                        <label for="firstName">Prénom :</label>
+                        <input type="text" id="firstName" name="firstName" value="Test" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Nom :</label>
+                        <input type="text" id="lastName" name="lastName" value="User" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email :</label>
+                        <input type="email" id="email" name="email" value="testuser@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Mot de passe :</label>
+                        <input type="password" id="password" name="password" value="test123456" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmer le mot de passe :</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" value="test123456" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">📝 Tester l'inscription</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔑 Test de la connexion</h2>
+            <div class="form-test">
+                <h3>Se connecter avec un compte existant</h3>
+                <form id="testLoginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email :</label>
+                        <input type="email" id="loginEmail" name="email" value="test@bikorent.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Mot de passe :</label>
+                        <input type="password" id="loginPassword" name="password" value="test123456" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">🔐 Tester la connexion</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧹 Nettoyage</h2>
+            <div class="form-test">
+                <h3>Supprimer l'utilisateur de test</h3>
+                <p>Utilisez ce bouton pour supprimer l'utilisateur de test créé précédemment.</p>
+                <button id="cleanupBtn" class="btn btn-danger">🗑️ Supprimer l'utilisateur de test</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Résultats des tests</h2>
+            <div id="testResults">
+                <div class="status info">
+                    Aucun test exécuté pour le moment. Utilisez les formulaires ci-dessus pour tester le système d'authentification.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test de l'inscription
+        document.getElementById('testRegisterForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data)
+                });
+                
+                if (response.ok) {
+                    showResult('success', '✅ Inscription réussie ! Redirection vers la page d\'accueil...');
+                    setTimeout(() => {
+                        window.open('/', '_blank');
+                    }, 1000);
+                } else {
+                    const text = await response.text();
+                    showResult('warning', '⚠️ Erreur lors de l\'inscription. Vérifiez la console pour plus de détails.');
+                    console.error('Erreur inscription:', text);
+                }
+            } catch (error) {
+                showResult('warning', '❌ Erreur de connexion lors de l\'inscription: ' + error.message);
+            }
+        });
+
+        // Test de la connexion
+        document.getElementById('testLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data)
+                });
+                
+                if (response.ok) {
+                    showResult('success', '✅ Connexion réussie ! Redirection vers la page d\'accueil...');
+                    setTimeout(() => {
+                        window.open('/', '_blank');
+                    }, 1000);
+                } else {
+                    const text = await response.text();
+                    showResult('warning', '⚠️ Erreur lors de la connexion. Vérifiez la console pour plus de détails.');
+                    console.error('Erreur connexion:', text);
+                }
+            } catch (error) {
+                showResult('warning', '❌ Erreur de connexion lors de la connexion: ' + error.message);
+            }
+        });
+
+        // Nettoyage
+        document.getElementById('cleanupBtn').addEventListener('click', async function() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer l\'utilisateur de test ?')) {
+                try {
+                    const response = await fetch('/test-cleanup', {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        showResult('success', '✅ Utilisateur de test supprimé avec succès !');
+                    } else {
+                        showResult('warning', '⚠️ Erreur lors de la suppression de l\'utilisateur de test.');
+                    }
+                } catch (error) {
+                    showResult('warning', '❌ Erreur de connexion lors de la suppression: ' + error.message);
+                }
+            }
+        });
+
+        function showResult(type, message) {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Vérifier l'état de connexion au chargement
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('/api/auth/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.isAuthenticated) {
+                        showResult('info', `👤 Vous êtes connecté en tant que: ${data.user.firstName} ${data.user.lastName}`);
+                    } else {
+                        showResult('info', '🔓 Vous n\'êtes pas connecté. Testez l\'inscription ou la connexion.');
+                    }
+                }
+            } catch (error) {
+                console.log('Impossible de vérifier l\'état de connexion:', error);
+            }
+        });
+    </script>
+</body>
+</html>

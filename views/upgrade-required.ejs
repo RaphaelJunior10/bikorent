@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Fonctionnalité Premium - BikoRent' %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --white: #ffffff;
+            --gray: #6b7280;
+            --light-gray: #f1f5f9;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--dark-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .upgrade-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            padding: 3rem;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upgrade-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+        }
+
+        .upgrade-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2rem;
+            color: white;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .upgrade-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+        }
+
+        .upgrade-subtitle {
+            font-size: 1.1rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+        }
+
+        .upgrade-description {
+            background: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .upgrade-description h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upgrade-description p {
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--dark-color);
+        }
+
+        .feature-list li i {
+            color: var(--success-color);
+            font-size: 1.1rem;
+        }
+
+        .upgrade-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light-gray);
+            color: var(--dark-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .pricing-highlight {
+            background: linear-gradient(135deg, var(--accent-color), #f97316);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            font-weight: 600;
+        }
+
+        .pricing-highlight .price {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .upgrade-container {
+                padding: 2rem;
+            }
+
+            .upgrade-title {
+                font-size: 1.5rem;
+            }
+
+            .upgrade-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="upgrade-container">
+        <div class="upgrade-icon">
+            <i class="fas fa-crown"></i>
+        </div>
+
+        <h1 class="upgrade-title">Accès Restreint</h1>
+        <p class="upgrade-subtitle">Seuls les membres Entreprise ont accès à cette fonctionnalité. Mettez à jour votre forfait pour y accéder.</p>
+
+
+        <!--<div class="pricing-highlight">
+            <div>Forfait Entreprise</div>
+            <div class="price">29FCFA /mois</div>
+            <div>ou 290FCFA /an (2 mois gratuits)</div>
+        </div>-->
+
+        <div class="upgrade-actions2">
+            <!--<button class="btn btn-primary" id="activateEnterpriseBtn">
+                <i class="fas fa-arrow-up"></i>
+                Activer le forfait Entreprise
+            </button>-->
+            <a href="/parametres" class="btn btn-secondary">
+                <i class="fas fa-cog"></i>
+                Aller aux paramètres
+            </a>
+            <a href="/dashboard" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Retour au tableau de bord
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const activateBtn = document.getElementById('activateEnterpriseBtn');
+            
+            activateBtn.addEventListener('click', async function() {
+                const originalText = activateBtn.innerHTML;
+                activateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activation...';
+                activateBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/calendrier/api/setup-enterprise', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Afficher un message de succès
+                        showSuccessMessage('Plan Entreprise activé avec succès ! Redirection en cours...');
+                        
+                        // Rediriger vers le calendrier après 2 secondes
+                        setTimeout(() => {
+                            window.location.href = '/calendrier';
+                        }, 2000);
+                    } else {
+                        showErrorMessage(result.message || 'Erreur lors de l\'activation du plan');
+                        activateBtn.innerHTML = originalText;
+                        activateBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    showErrorMessage('Erreur lors de l\'activation du plan');
+                    activateBtn.innerHTML = originalText;
+                    activateBtn.disabled = false;
+                }
+            });
+        });
+        
+        function showSuccessMessage(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 500;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        function showErrorMessage(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #ef4444;
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 500;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

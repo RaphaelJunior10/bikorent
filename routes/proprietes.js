@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const dataService = require('../services/dataService');
+const billingService = require('../services/billingService');
+const { checkPagePermissions, checkPropertyLimit } = require('../middleware/billingMiddleware');
 
 const { firestoreUtils, storageUtils, COLLECTIONS } = require('../config/firebase');
 const { isFirebaseEnabled } = require('../config/environment');
 
-const connectedUser = {id: 'U7h4HU5OfB9KTeY341NE'};
+// L'utilisateur connecté sera récupéré depuis req.session.user
 // Fonction pour uploader une image vers Firebase Storage
 async function uploadImageToFirebaseStorage(base64Image, propertyId, imageIndex = 0) {
     try {
@@ -62,7 +64,7 @@ async function deleteImageFromFirebaseStorage(imageUrl) {
 }
 
 // Page des propriétés
-router.get('/', async (req, res) => {
+router.get('/', checkPagePermissions, async (req, res) => {
 
     let properties = [
         {
@@ -179,7 +181,7 @@ router.get('/', async (req, res) => {
             ]
         }
     ];
-    let ownerId = connectedUser.id;
+    let ownerId = req.session.user.id;
     
     // Récupération des données depuis Firebase si activé
     if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
@@ -221,22 +223,28 @@ router.get('/', async (req, res) => {
     } else {
         console.log('🔄 Firebase désactivé ou non initialisé - utilisation des données statiques');
     }
+    // Récupérer les permissions de facturation
+    const userBillingPlan = await billingService.getUserBillingPlan(req.session.user.id);
+    const pagePermissions = req.pagePermissions || {};
+    
     res.render('proprietes', {
         title: 'Propriétés - BikoRent',
         pageTitle: 'Propriétés',
         currentPage: 'proprietes',
         user: {
-            name: 'Admin',
-            role: 'Propriétaire'
+            name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Admin',
+            role: req.session.user ? req.session.user.role : 'Propriétaire'
         },
-        properties: properties
+        properties: properties,
+        userBillingPlan: userBillingPlan,
+        pagePermissions: pagePermissions
     });
 });
 
-router.post('/add', async (req, res) => {
+router.post('/add', checkPropertyLimit, async (req, res) => {
     try {
         const newProperty = req.body;
-        newProperty.ownerId = connectedUser.id;
+        newProperty.ownerId = req.session.user.id;
         newProperty.isPaymentLink = false; // Par défaut, le lien de paiement est désactivé
         
         console.log('🔄 Ajout d\'une nouvelle propriété...', newProperty);
@@ -355,7 +363,7 @@ router.put('/:id', async (req, res) => {
         }
 
         // Vérifier que l'utilisateur connecté est le propriétaire
-        if (existingProperty.ownerId !== connectedUser.id) {
+        if (existingProperty.ownerId !== req.session.user.id) {
             return res.status(403).json({ 
                 error: 'Accès refusé',
                 details: 'Vous n\'êtes pas autorisé à modifier cette propriété'
@@ -521,7 +529,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         //On verifi que connectedUser.id est l id du owner de la propriete
-        if(property.ownerId !== connectedUser.id) {
+        if(property.ownerId !== req.session.user.id) {
             return res.status(403).json({ 
                 error: 'Accès refusé',
                 details: 'Vous n\'êtes pas autorisé à supprimer cette propriété'

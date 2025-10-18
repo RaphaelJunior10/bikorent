@@ -38,7 +38,7 @@
                                                 data-rent="<%= property.monthlyRent %>"
                                                 data-name="<%= property.name %>"
                                                 <%= index === 0 ? 'selected' : '' %>>
-                                            <%= property.name %> - €<%= property.monthlyRent %>/mois
+                                            <%= property.name %> - FCFA <%= property.monthlyRent %>/mois
                                         </option>
                                     <% }); %>
                                 <% } %>
@@ -57,11 +57,11 @@
                                 </div>
                                 <div class="debt-item">
                                     <span class="label">Loyer mensuel:</span>
-                                    <span class="value" id="monthlyRent">€0</span>
+                                    <span class="value" id="monthlyRent">FCFA 0</span>
                                 </div>
                                 <div class="debt-item total">
                                     <span class="label">Total dû:</span>
-                                    <span class="value" id="totalDebt">€0</span>
+                                    <span class="value" id="totalDebt">FCFA 0</span>
                                 </div>
                             </div>
                         </div>
@@ -98,7 +98,7 @@
                         <div class="form-group">
                             <label for="totalAmount">Montant total</label>
                             <div class="amount-display">
-                                <span class="currency">€</span>
+                                <span class="currency">FCFA </span>
                                 <span id="totalAmount" class="amount">0</span>
                             </div>
                             <small class="form-help">Calculé automatiquement: Loyer mensuel × Nombre de mois</small>
@@ -127,15 +127,15 @@
                         <div class="payment-summary">
                             <div class="summary-item">
                                 <span class="label">Montant du loyer:</span>
-                                <span class="value" id="mobidycAmount">€0.00</span>
+                                <span class="value" id="mobidycAmount">FCFA 0.00</span>
                             </div>
                             <div class="summary-item">
                                 <span class="label">Frais de service:</span>
-                                <span class="value" id="mobidycFees">€0.00</span>
+                                <span class="value" id="mobidycFees">FCFA 0.00</span>
                             </div>
                             <div class="summary-item total">
                                 <span class="label">Total à payer:</span>
-                                <span class="value" id="mobidycTotal">€0.00</span>
+                                <span class="value" id="mobidycTotal">FCFA 0.00</span>
                             </div>
                         </div>
                         

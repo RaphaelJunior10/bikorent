@@ -2,9 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { firestoreUtils, COLLECTIONS, authUtils } = require('../config/firebase');
 const { isFirebaseEnabled } = require('../config/environment');
+const billingService = require('../services/billingService');
+const dataService = require('../services/dataService');
+const { checkPagePermissions } = require('../middleware/billingMiddleware');
 
 // Données des locataires (structure JSON facilement modifiable)
-let locatairesData = {
+/*let locatairesData = {
     locataires: [
         {
             id: 1,
@@ -113,11 +116,12 @@ let locatairesData = {
         montantDu: 4370
     }
 };
-
+*/
 // Page des locataires
-router.get('/', async (req, res) => {
-    let ownerId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
-    
+router.get('/', checkPagePermissions, async (req, res) => {
+    let ownerId = req.session.user.id; // ID du propriétaire connecté
+    let firebaseOwner = null;
+    let locatairesData = null;
     // Récupération des données depuis Firebase si activé
     if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
         try {
@@ -129,6 +133,9 @@ router.get('/', async (req, res) => {
             
             // Récupérer tous les utilisateurs (locataires)
             const firebaseUsers = await firestoreUtils.getAll(COLLECTIONS.USERS);
+
+            //Recuperation de l'utilisateur propriétaire
+            firebaseOwner = await firestoreUtils.getById(COLLECTIONS.USERS, ownerId);
             
             // Récupérer tous les paiements
             const firebasePayments = await firestoreUtils.getAll(COLLECTIONS.PAYMENTS);
@@ -154,7 +161,7 @@ router.get('/', async (req, res) => {
                 if (property.tenant && property.tenant.userId) {
                     // Trouver l'utilisateur correspondant
                     const user = firebaseUsers.find(u => u.id === property.tenant.userId);
-                    if (user && user.type === 'tenant') {
+                    if (user) {
                         console.log(`👤 Traitement du locataire: ${user.profile.firstName} ${user.profile.lastName}`);
                         const entryDate = (property.tenant !== null) ? property.tenant.entryDate : new Date();
                         // Trouver les paiements de ce locataire
@@ -241,15 +248,22 @@ router.get('/', async (req, res) => {
         console.log('🔄 Firebase désactivé ou non initialisé - utilisation des données statiques');
     }
     
+    // Récupérer les permissions de facturation
+    const userBillingPlan = await billingService.getUserBillingPlan(req.session.user.id);
+    const pagePermissions = req.pagePermissions || {};
+    
     res.render('locataires', {
         title: 'Locataires - BikoRent',
         pageTitle: 'Locataires',
         currentPage: 'locataires',
+        pageClass: 'locataires-page',
         user: {
-            name: 'Admin',
-            role: 'Propriétaire'
+            name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Utilisateur',
+            role: req.session.user ? req.session.user.role : 'Propriétaire'
         },
-        locatairesData: locatairesData
+        locatairesData: locatairesData,
+        userBillingPlan: userBillingPlan,
+        pagePermissions: pagePermissions
     });
 });
 
@@ -265,7 +279,7 @@ router.post('/remove-tenant', async (req, res) => {
             });
         }
 
-        let ownerId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        let ownerId = req.session.user.id; // ID du propriétaire connecté
         
         // Vérifier si Firebase est activé
         if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
@@ -305,6 +319,18 @@ router.post('/remove-tenant', async (req, res) => {
 
                 console.log(`✅ Locataire ${tenantId} retiré de la propriété ${propertyName} par le propriétaire ${ownerId}`);
 
+                //On recupere le nombre de propriétés louées
+                const propertiesCount = await dataService.getTenants(ownerId);
+                //On recupere le plan de facturation
+                const user = await dataService.getUser(ownerId);
+                //On enregistre dans user_billing
+                const userBilling = await dataService.getPlanChange(ownerId);
+                userBilling.facturations.push({
+                    planId: user.facturation?.planId,
+                    propertyCount: propertiesCount,
+                    date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
+                });
+
                 return res.json({
                     success: true,
                     message: `Locataire retiré avec succès de la propriété "${propertyName}"`
@@ -341,7 +367,7 @@ router.post('/remove-tenant', async (req, res) => {
 // Route pour récupérer les propriétés libres
 router.get('/available-properties', async (req, res) => {
     try {
-        let ownerId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        let ownerId = req.session.user.id; // ID du propriétaire connecté
         
         // Vérifier si Firebase est activé
         if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
@@ -432,14 +458,14 @@ router.post('/add-tenant', async (req, res) => {
         } = req.body;
 
         // Validation des champs obligatoires
-        if (!prenom || !nom || !email || !telephone || !propertyId || !monthlyRent || !entryDate) {
+        if (!prenom || !nom || !email || !telephone || !propertyId || !entryDate) {
             return res.status(400).json({
                 success: false,
                 message: 'Tous les champs obligatoires doivent être remplis'
             });
         }
 
-        let ownerId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+        let ownerId = req.session.user.id; // ID du propriétaire connecté
 
         // Vérifier si Firebase est activé
         if (isFirebaseEnabled() && firestoreUtils.isInitialized() && authUtils.isInitialized()) {
@@ -474,6 +500,30 @@ router.post('/add-tenant', async (req, res) => {
                 
                 console.log(`🔐 Création de l'utilisateur dans l'authentification Firebase: ${email}`);
                 const authUser = await authUtils.createUser(email, defaultPassword, displayName);
+
+                //Creer l'utilisateur dans Mobidyc
+                const userMobId = await dataService.addUserToMobidyc({
+                    nom: prenom,
+                    prenom: nom,
+                    mail: email,
+                    mdp: defaultPassword,
+                    tel: [telephone],
+                });
+
+                if(!userMobId){
+                    return res.status(500).json({ success: false, error: 'Erreur lors de la création de l\'utilisateur dans Mobidyc' });
+                }
+                console.log('💾 Utilisateur créé dans Mobidyc:', userMobId);
+                //Creer le service dans Mobidyc
+                const serviceMobData = await dataService.addServiceToMobidyc({
+                    nom: 'BikoRent-'+firstName+'-'+lastName,
+                    uid: userMobId,
+                });
+
+                if(!serviceMobData){
+                    return res.status(500).json({ success: false, error: 'Erreur lors de la création du service dans Mobidyc' });
+                }
+                console.log('💾 Service créé dans Mobidyc:', serviceMobData);
                 
                 // 2. Créer le document utilisateur dans Firestore avec l'UID de l'authentification
                 const newUserData = {
@@ -499,7 +549,13 @@ router.post('/add-tenant', async (req, res) => {
                     },
                     authUid: authUser.uid, // Stocker l'UID de l'authentification
                     createdAt: new Date(),
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
+                    mobidyc: {
+                        userId: userMobId,
+                        userApikey: '',
+                        serviceId: serviceMobData.sid,
+                        serviceApikey: serviceMobData.apikey
+                    }
                 };
 
                 // Ajouter l'utilisateur à la collection USERS avec l'ID spécifique
@@ -510,16 +566,26 @@ router.post('/add-tenant', async (req, res) => {
                     tenant: {
                         userId: authUser.uid, // Utiliser l'UID de l'authentification
                         entryDate: entryDate,
-                        monthlyRent: monthlyRent
                     },
-                    status: 'loué',
+                    status: 'rented',
                     updatedAt: new Date()
                 };
 
                 await firestoreUtils.update(COLLECTIONS.PROPERTIES, propertyId, propertyUpdateData);
 
                 console.log(`✅ Nouveau locataire créé: ${prenom} ${nom} (Auth UID: ${authUser.uid}) pour la propriété ${propertyId}`);
-
+                //On recupere le nombre de propriétés louées
+                const propertiesCount = await dataService.getTenants(ownerId);
+                //On recupere le plan de facturation
+                const user = await dataService.getUser(ownerId);
+                //On enregistre dans user_billing
+                const userBilling = await dataService.getPlanChange(ownerId);
+                userBilling.facturations.push({
+                    planId: user.facturation?.planId,
+                    propertyCount: propertiesCount,
+                    date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
+                });
+                await dataService.updateUserBillingPlan2(ownerId, userBilling);
                 return res.json({
                     success: true,
                     message: `Locataire ${prenom} ${nom} créé avec succès et associé à la propriété. Mot de passe temporaire: ${defaultPassword}`,

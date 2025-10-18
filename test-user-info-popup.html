@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Popup Informations Utilisateur - BikoRent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .test-error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .test-success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .feature-list {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .feature-list h4 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 5px 0;
+        }
+        .popup-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .popup-preview h5 {
+            color: #495057;
+            margin-top: 0;
+        }
+        .mock-conversation {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 10px 0;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .conversation-info {
+            display: flex;
+            align-items: center;
+        }
+        .conversation-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 12px;
+        }
+        .conversation-details h4 {
+            margin: 0;
+            color: #333;
+            font-size: 1rem;
+        }
+        .conversation-details p {
+            margin: 0;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        .conversation-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-icon {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #666;
+        }
+        .btn-icon:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+        .btn-icon.info-btn {
+            color: #2563eb;
+        }
+        .btn-icon.info-btn:hover {
+            background: #e3f2fd;
+        }
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .instructions h5 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>👤 Test Popup Informations Utilisateur - BikoRent</h1>
+        
+        <div class="test-section">
+            <h3>🎯 Fonctionnalités Implémentées</h3>
+            <div class="feature-list">
+                <h4>1. Icône d'Information :</h4>
+                <ul>
+                    <li>✅ Icône d'information dans l'en-tête de conversation</li>
+                    <li>✅ Bouton cliquable avec tooltip</li>
+                    <li>✅ Affichage conditionnel (seulement en conversation)</li>
+                </ul>
+                
+                <h4>2. Popup d'Informations :</h4>
+                <ul>
+                    <li>✅ Popup modal avec overlay</li>
+                    <li>✅ Animation d'apparition (fadeIn + slideIn)</li>
+                    <li>✅ Fermeture par bouton X, bouton Fermer, ou clic extérieur</li>
+                    <li>✅ Design responsive et moderne</li>
+                </ul>
+                
+                <h4>3. Informations Utilisateur :</h4>
+                <ul>
+                    <li>✅ Avatar utilisateur avec gradient</li>
+                    <li>✅ Nom de l'utilisateur</li>
+                    <li>✅ Email généré automatiquement</li>
+                    <li>✅ Numéro de téléphone généré</li>
+                    <li>✅ Propriété concernée</li>
+                    <li>✅ Date d'inscription</li>
+                    <li>✅ Statut en ligne</li>
+                </ul>
+                
+                <h4>4. Fonctionnalité de Copie :</h4>
+                <ul>
+                    <li>✅ Bouton de copie à côté du nom</li>
+                    <li>✅ Copie dans le presse-papiers</li>
+                    <li>✅ Feedback visuel (icône ✓ verte)</li>
+                    <li>✅ Fallback pour navigateurs anciens</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👀 Aperçu du Popup</h3>
+            <div class="popup-preview">
+                <h5>Exemple de conversation avec icône d'information :</h5>
+                
+                <div class="mock-conversation">
+                    <div class="conversation-info">
+                        <div class="conversation-avatar">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="conversation-details">
+                            <h4>Marie Dubois</h4>
+                            <p>Appartement T3 - Paris 15ème</p>
+                        </div>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="btn-icon info-btn" title="Informations utilisateur">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button class="btn-icon" title="Actualiser">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mock-conversation">
+                    <div class="conversation-info">
+                        <div class="conversation-avatar">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="conversation-details">
+                            <h4>Pierre Martin</h4>
+                            <p>Studio - Lyon 2ème</p>
+                        </div>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="btn-icon info-btn" title="Informations utilisateur">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button class="btn-icon" title="Actualiser">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📱 Test du Popup</h3>
+            <div class="instructions">
+                <h5>Instructions pour tester le popup d'informations :</h5>
+                <ol>
+                    <li><strong>Ouvrez le chat</strong> dans un navigateur</li>
+                    <li><strong>Sélectionnez une conversation</strong> en cliquant dessus</li>
+                    <li><strong>Cliquez sur l'icône d'information</strong> (ℹ️) dans l'en-tête</li>
+                    <li><strong>Vérifiez</strong> que le popup s'affiche avec les informations</li>
+                    <li><strong>Testez la copie</strong> en cliquant sur l'icône de copie à côté du nom</li>
+                    <li><strong>Fermez le popup</strong> avec le X, le bouton Fermer, ou en cliquant à l'extérieur</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test des Fonctionnalités</h3>
+            <button class="test-button" onclick="testPopupElements()">Tester les Éléments du Popup</button>
+            <button class="test-button" onclick="testCopyFunctionality()">Tester la Fonctionnalité de Copie</button>
+            <button class="test-button" onclick="testResponsivePopup()">Tester le Responsive</button>
+            <button class="test-button" onclick="loadChat()">Charger le Chat</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Liens de Test</h3>
+            <a href="http://localhost:3000/chat" class="test-button" target="_blank">Ouvrir le Chat</a>
+            <a href="http://localhost:3000/dashboard" class="test-button" target="_blank">Dashboard</a>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Checklist de Test</h3>
+            <ol>
+                <li><strong>Icône d'information</strong> : Visible dans l'en-tête de conversation</li>
+                <li><strong>Ouverture du popup</strong> : Clic sur l'icône d'information</li>
+                <li><strong>Contenu du popup</strong> : Toutes les informations utilisateur affichées</li>
+                <li><strong>Bouton de copie</strong> : Fonctionne et donne un feedback visuel</li>
+                <li><strong>Fermeture du popup</strong> : Toutes les méthodes fonctionnent</li>
+                <li><strong>Design responsive</strong> : S'adapte aux différentes tailles d'écran</li>
+                <li><strong>Animations</strong> : Apparition et disparition fluides</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testPopupElements() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test des éléments du popup en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                // Vérifier la présence des éléments du popup
+                const hasPopup = text.includes('userInfoPopup');
+                const hasInfoButton = text.includes('conversationInfo');
+                const hasCopyButton = text.includes('copyUserName');
+                const hasCloseButtons = text.includes('closeUserInfoPopup');
+                const hasUserDetails = text.includes('popupUserName');
+                
+                if (hasPopup && hasInfoButton && hasCopyButton && hasCloseButtons && hasUserDetails) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Tous les éléments du popup sont présents !<br>
+                            Popup principal : ${hasPopup ? 'Présent' : 'Manquant'}<br>
+                            Bouton d'information : ${hasInfoButton ? 'Présent' : 'Manquant'}<br>
+                            Bouton de copie : ${hasCopyButton ? 'Présent' : 'Manquant'}<br>
+                            Boutons de fermeture : ${hasCloseButtons ? 'Présents' : 'Manquants'}<br>
+                            Détails utilisateur : ${hasUserDetails ? 'Présents' : 'Manquants'}<br>
+                            Le popup devrait fonctionner correctement !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Certains éléments du popup sont manquants<br>
+                            Popup: ${hasPopup ? 'Présent' : 'Manquant'}<br>
+                            Bouton info: ${hasInfoButton ? 'Présent' : 'Manquant'}<br>
+                            Bouton copie: ${hasCopyButton ? 'Présent' : 'Manquant'}<br>
+                            Boutons fermeture: ${hasCloseButtons ? 'Présents' : 'Manquants'}<br>
+                            Détails: ${hasUserDetails ? 'Présents' : 'Manquants'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testCopyFunctionality() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test de la fonctionnalité de copie en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                // Vérifier la présence des fonctions de copie
+                const hasCopyFunction = text.includes('copyUserName');
+                const hasClipboardAPI = text.includes('navigator.clipboard');
+                const hasFallbackCopy = text.includes('fallbackCopy');
+                const hasCopyFeedback = text.includes('showCopyFeedback');
+                
+                if (hasCopyFunction && (hasClipboardAPI || hasFallbackCopy) && hasCopyFeedback) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Fonctionnalité de copie configurée !<br>
+                            Fonction de copie : ${hasCopyFunction ? 'Présente' : 'Manquante'}<br>
+                            API Clipboard : ${hasClipboardAPI ? 'Présente' : 'Manquante'}<br>
+                            Copie de fallback : ${hasFallbackCopy ? 'Présente' : 'Manquante'}<br>
+                            Feedback visuel : ${hasCopyFeedback ? 'Présent' : 'Manquant'}<br>
+                            La copie devrait fonctionner sur tous les navigateurs !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Fonctionnalité de copie partiellement configurée<br>
+                            Vérifiez les fonctions de copie et le feedback
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testResponsivePopup() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test du responsive du popup en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                // Vérifier la présence des styles responsive
+                const hasMediaQueries = text.includes('@media');
+                const hasResponsiveStyles = text.includes('max-width: 480px');
+                const hasFlexbox = text.includes('display: flex');
+                const hasOverflow = text.includes('overflow-y: auto');
+                
+                if (hasMediaQueries && hasResponsiveStyles && hasFlexbox && hasOverflow) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Popup responsive configuré !<br>
+                            Media queries : ${hasMediaQueries ? 'Présentes' : 'Manquantes'}<br>
+                            Styles mobile : ${hasResponsiveStyles ? 'Présents' : 'Manquants'}<br>
+                            Flexbox : ${hasFlexbox ? 'Présent' : 'Manquant'}<br>
+                            Gestion overflow : ${hasOverflow ? 'Présente' : 'Manquante'}<br>
+                            Le popup s'adaptera aux différentes tailles d'écran !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Popup responsive partiellement configuré<br>
+                            Vérifiez les media queries et les styles responsive
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function loadChat() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Chargement du chat en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const conversationItems = doc.querySelectorAll('.conversation-item');
+                const infoButton = doc.querySelector('#conversationInfo');
+                const popup = doc.querySelector('#userInfoPopup');
+                
+                if (conversationItems.length > 0 && infoButton && popup) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Chat chargé avec le popup d'informations !<br>
+                            ${conversationItems.length} conversations trouvées<br>
+                            Bouton d'information : ${infoButton ? 'Présent' : 'Manquant'}<br>
+                            Popup : ${popup ? 'Présent' : 'Manquant'}<br>
+                            <a href="http://localhost:3000/chat" target="_blank">Ouvrir le chat</a>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-error">
+                            ❌ Chat chargé mais éléments manquants<br>
+                            Conversations: ${conversationItems.length}<br>
+                            Bouton info: ${infoButton ? 'Présent' : 'Manquant'}<br>
+                            Popup: ${popup ? 'Présent' : 'Manquant'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du chargement<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testPopupElements();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

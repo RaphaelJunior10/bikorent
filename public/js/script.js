@@ -345,7 +345,7 @@ function addCalendarTooltips() {
                 <div><strong>Locataire:</strong> ${tenant}</div>
                 <div><strong>Propriété:</strong> ${property}</div>
                 <div><strong>Période:</strong> ${month}</div>
-                <div><strong>Montant:</strong> €${amount}</div>
+                <div><strong>Montant:</strong> FCFA ${amount}</div>
             `;
 
             tooltip.classList.add('show');

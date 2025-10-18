@@ -69,8 +69,14 @@ const COLLECTIONS = {
     PROPERTIES: 'properties',
     USERS: 'users',
     PAYMENTS: 'payments',
-    REPORTS: 'reports'
+    REPORTS: 'reports',
+    MESSAGES: 'messages',
+    USER_AUTOMATIONS: 'user_automations',
+    USER_BILLING: 'user_billing',
+    USER_PAYMENT_METHODS: 'user_payment_methods'
 };
+
+
 
 // Fonctions utilitaires pour Firestore
 const firestoreUtils = {

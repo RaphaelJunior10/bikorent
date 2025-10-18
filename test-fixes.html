@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Corrections - BikoRent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .test-error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .test-success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .fix-list {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix-list h4 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .fix-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .fix-list li {
+            margin: 5px 0;
+        }
+        .chat-test {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .message-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .send-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .send-button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Test des Corrections - BikoRent</h1>
+        
+        <div class="test-section">
+            <h3>🔧 Corrections Appliquées</h3>
+            <div class="fix-list">
+                <h4>1. Problème des dates "Invalid Date" :</h4>
+                <ul>
+                    <li>✅ Gestion des timestamps Firebase (objet avec seconds et nanoseconds)</li>
+                    <li>✅ Conversion correcte : new Date(timestamp.seconds * 1000)</li>
+                    <li>✅ Vérification de validité des dates</li>
+                    <li>✅ Correction dans formatTime() côté client</li>
+                    <li>✅ Correction dans les fonctions de tri côté serveur</li>
+                    <li>✅ Correction dans la vue EJS</li>
+                </ul>
+                
+                <h4>2. Problème d'enregistrement des messages :</h4>
+                <ul>
+                    <li>✅ Correction de l'ID utilisateur (U7h4HU5OfB9KTeY341NE)</li>
+                    <li>✅ Utilisation de COLLECTIONS.MESSAGES au lieu de 'messages'</li>
+                    <li>✅ Ajout de logs de débogage</li>
+                    <li>✅ Correction de la fonction markMessagesAsRead</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test des Corrections</h3>
+            <button class="test-button" onclick="testDateDisplay()">Tester l'Affichage des Dates</button>
+            <button class="test-button" onclick="testMessageSending()">Tester l'Envoi de Messages</button>
+            <button class="test-button" onclick="loadChat()">Charger le Chat</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💬 Test d'Envoi de Message</h3>
+            <div class="chat-test">
+                <p>Testez l'envoi d'un message pour vérifier qu'il s'enregistre en base :</p>
+                <input type="text" id="testMessage" class="message-input" placeholder="Tapez votre message de test...">
+                <button class="send-button" onclick="sendTestMessage()">Envoyer Message Test</button>
+                <div id="messageResult"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Liens de Test</h3>
+            <a href="http://localhost:3000/chat" class="test-button" target="_blank">Ouvrir le Chat</a>
+            <a href="http://localhost:3000/dashboard" class="test-button" target="_blank">Dashboard</a>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Instructions de Test</h3>
+            <ol>
+                <li><strong>Ouvrez le chat</strong> et vérifiez que les dates s'affichent correctement</li>
+                <li><strong>Envoyez un message</strong> et vérifiez qu'il s'enregistre en base</li>
+                <li><strong>Rechargez la page</strong> pour voir si le message persiste</li>
+                <li><strong>Vérifiez les logs</strong> du serveur pour les messages de débogage</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testDateDisplay() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test de l\'affichage des dates en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                // Vérifier s'il y a "Invalid Date" dans le HTML
+                if (text.includes('Invalid Date')) {
+                    results.innerHTML = `
+                        <div class="test-result test-error">
+                            ❌ Problème d'affichage des dates encore présent<br>
+                            "Invalid Date" trouvé dans le HTML
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Extraire les conversations du HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const timeElements = doc.querySelectorAll('.conversation-time');
+                
+                if (timeElements.length > 0) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            🎉 SUCCÈS !<br>
+                            ✅ Aucun "Invalid Date" trouvé<br>
+                            ✅ ${timeElements.length} éléments de temps affichés<br>
+                            ✅ Les dates s'affichent correctement !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Aucun élément de temps trouvé<br>
+                            Vérifiez manuellement l'affichage
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testMessageSending() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test de l\'envoi de messages en cours...</div>';
+            
+            try {
+                const testMessage = {
+                    propertyId: 'PROP001',
+                    message: 'Message de test - ' + new Date().toLocaleString(),
+                    recipientId: 'TENANT001'
+                };
+                
+                const response = await fetch('/chat/api/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testMessage)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            🎉 SUCCÈS !<br>
+                            ✅ Message envoyé avec succès<br>
+                            ✅ ID du message: ${data.message.id}<br>
+                            ✅ L'enregistrement en base fonctionne !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-error">
+                            ❌ Erreur lors de l'envoi<br>
+                            ${data.error || 'Erreur inconnue'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function sendTestMessage() {
+            const messageInput = document.getElementById('testMessage');
+            const messageResult = document.getElementById('messageResult');
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                messageResult.innerHTML = '<div class="test-result test-warning">Veuillez saisir un message</div>';
+                return;
+            }
+            
+            messageResult.innerHTML = '<div class="test-result">Envoi en cours...</div>';
+            
+            try {
+                const testMessage = {
+                    propertyId: 'PROP001',
+                    message: message,
+                    recipientId: 'TENANT001'
+                };
+                
+                const response = await fetch('/chat/api/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testMessage)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    messageResult.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Message envoyé avec succès !<br>
+                            ID: ${data.message.id}<br>
+                            Rechargez la page pour le voir dans la conversation.
+                        </div>
+                    `;
+                    messageInput.value = '';
+                } else {
+                    messageResult.innerHTML = `
+                        <div class="test-result test-error">
+                            ❌ Erreur: ${data.error || 'Erreur inconnue'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                messageResult.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function loadChat() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Chargement du chat en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                // Extraire les conversations du HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const conversationItems = doc.querySelectorAll('.conversation-item');
+                
+                if (conversationItems.length > 0) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Chat chargé avec succès<br>
+                            ${conversationItems.length} conversations trouvées<br>
+                            <a href="http://localhost:3000/chat" target="_blank">Ouvrir le chat</a>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-error">
+                            ❌ Chat chargé mais aucune conversation<br>
+                            Vérifiez les logs du serveur
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du chargement<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testDateDisplay();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

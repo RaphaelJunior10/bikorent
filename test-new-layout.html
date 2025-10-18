@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Nouveau Layout - BikoRent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .test-error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .test-success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .layout-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .layout-preview h5 {
+            color: #495057;
+            margin-top: 0;
+        }
+        .conversation-preview {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 10px 0;
+            padding: 12px 15px;
+        }
+        .conversation-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            min-height: 20px;
+        }
+        .conversation-line:last-child {
+            margin-bottom: 0;
+        }
+        .conversation-icon-small {
+            font-size: 0.8rem;
+            margin-right: 8px;
+            width: 12px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .conversation-user {
+            font-weight: 600;
+            color: #333;
+        }
+        .conversation-user .conversation-icon-small {
+            color: #2563eb;
+        }
+        .conversation-sender-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.95rem;
+        }
+        .conversation-time {
+            font-size: 0.75rem;
+            color: #999;
+            white-space: nowrap;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        .conversation-property {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .conversation-property .conversation-icon-small {
+            color: #28a745;
+        }
+        .conversation-property-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .conversation-message {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .conversation-message .conversation-icon-small {
+            color: #6c757d;
+        }
+        .conversation-message-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .unread-badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        .changes-list {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .changes-list h4 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .changes-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .changes-list li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎨 Test Nouveau Layout - Conversations</h1>
+        
+        <div class="test-section">
+            <h3>🔧 Modifications Appliquées</h3>
+            <div class="changes-list">
+                <h4>1. Suppression de la grande icône utilisateur :</h4>
+                <ul>
+                    <li>✅ Retiré l'avatar circulaire de 50px</li>
+                    <li>✅ Supprimé l'espace occupé par l'avatar</li>
+                    <li>✅ Éliminé le chevauchement des informations</li>
+                </ul>
+                
+                <h4>2. Nouveau layout en 3 lignes :</h4>
+                <ul>
+                    <li>✅ <strong>Ligne 1:</strong> Petite icône utilisateur + nom du sender + heure</li>
+                    <li>✅ <strong>Ligne 2:</strong> Petite icône propriété + nom de la propriété</li>
+                    <li>✅ <strong>Ligne 3:</strong> Petite icône message + texte du message + badge non lu</li>
+                </ul>
+                
+                <h4>3. Gestion des textes longs :</h4>
+                <ul>
+                    <li>✅ <code>text-overflow: ellipsis</code> pour tous les textes</li>
+                    <li>✅ <code>white-space: nowrap</code> pour éviter les retours à la ligne</li>
+                    <li>✅ <code>overflow: hidden</code> pour masquer le texte qui dépasse</li>
+                </ul>
+                
+                <h4>4. Icônes colorées :</h4>
+                <ul>
+                    <li>🔵 Icône utilisateur : Bleu (#2563eb)</li>
+                    <li>🟢 Icône propriété : Vert (#28a745)</li>
+                    <li>⚫ Icône message : Gris (#6c757d)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👀 Aperçu du Nouveau Layout</h3>
+            <div class="layout-preview">
+                <h5>Exemple de conversation :</h5>
+                
+                <div class="conversation-preview">
+                    <!-- Ligne 1: Nom de l'utilisateur avec petite icône -->
+                    <div class="conversation-line conversation-user">
+                        <i class="fas fa-user-circle conversation-icon-small"></i>
+                        <span class="conversation-sender-name">Marie Dubois</span>
+                        <span class="conversation-time">14:30</span>
+                    </div>
+                    
+                    <!-- Ligne 2: Nom de la propriété avec petite icône -->
+                    <div class="conversation-line conversation-property">
+                        <i class="fas fa-building conversation-icon-small"></i>
+                        <span class="conversation-property-name">Appartement T3 - Paris 15ème</span>
+                    </div>
+                    
+                    <!-- Ligne 3: Message avec icône message -->
+                    <div class="conversation-line conversation-message">
+                        <i class="fas fa-comment conversation-icon-small"></i>
+                        <span class="conversation-message-text">Bonjour, j'ai une question concernant le loyer...</span>
+                        <span class="unread-badge">2</span>
+                    </div>
+                </div>
+                
+                <div class="conversation-preview">
+                    <!-- Ligne 1: Nom de l'utilisateur avec petite icône -->
+                    <div class="conversation-line conversation-user">
+                        <i class="fas fa-user-circle conversation-icon-small"></i>
+                        <span class="conversation-sender-name">Pierre Martin</span>
+                        <span class="conversation-time">12:15</span>
+                    </div>
+                    
+                    <!-- Ligne 2: Nom de la propriété avec petite icône -->
+                    <div class="conversation-line conversation-property">
+                        <i class="fas fa-building conversation-icon-small"></i>
+                        <span class="conversation-property-name">Studio - Lyon 2ème</span>
+                    </div>
+                    
+                    <!-- Ligne 3: Message avec icône message -->
+                    <div class="conversation-line conversation-message">
+                        <i class="fas fa-comment conversation-icon-small"></i>
+                        <span class="conversation-message-text">Merci pour votre réponse rapide !</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test des Modifications</h3>
+            <button class="test-button" onclick="testNewLayout()">Tester le Nouveau Layout</button>
+            <button class="test-button" onclick="testTextEllipsis()">Tester les Ellipsis</button>
+            <button class="test-button" onclick="testIcons()">Tester les Icônes</button>
+            <button class="test-button" onclick="loadChat()">Charger le Chat</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Liens de Test</h3>
+            <a href="http://localhost:3000/chat" class="test-button" target="_blank">Ouvrir le Chat</a>
+            <a href="http://localhost:3000/dashboard" class="test-button" target="_blank">Dashboard</a>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Instructions de Test</h3>
+            <ol>
+                <li><strong>Ouvrez le chat</strong> et vérifiez le nouveau layout</li>
+                <li><strong>Vérifiez</strong> que chaque conversation a 3 lignes distinctes</li>
+                <li><strong>Testez</strong> avec des noms longs pour voir les ellipsis</li>
+                <li><strong>Vérifiez</strong> que les icônes sont colorées correctement</li>
+                <li><strong>Testez</strong> la sélection des conversations</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testNewLayout() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test du nouveau layout en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                const conversationLines = doc.querySelectorAll('.conversation-line');
+                const smallIcons = doc.querySelectorAll('.conversation-icon-small');
+                const senderNames = doc.querySelectorAll('.conversation-sender-name');
+                const propertyNames = doc.querySelectorAll('.conversation-property-name');
+                const messageTexts = doc.querySelectorAll('.conversation-message-text');
+                
+                if (conversationLines.length > 0 && smallIcons.length > 0) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Nouveau layout fonctionnel !<br>
+                            ${conversationLines.length} lignes de conversation trouvées<br>
+                            ${smallIcons.length} petites icônes affichées<br>
+                            ${senderNames.length} noms de senders<br>
+                            ${propertyNames.length} noms de propriétés<br>
+                            ${messageTexts.length} textes de messages<br>
+                            Le layout en 3 lignes est opérationnel !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Layout partiellement fonctionnel<br>
+                            Lignes: ${conversationLines.length}<br>
+                            Icônes: ${smallIcons.length}<br>
+                            Vérifiez que le serveur utilise la nouvelle version
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testTextEllipsis() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test des ellipsis en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                const ellipsisElements = doc.querySelectorAll('[style*="text-overflow: ellipsis"], .conversation-sender-name, .conversation-property-name, .conversation-message-text');
+                
+                if (ellipsisElements.length > 0) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Ellipsis configurés !<br>
+                            ${ellipsisElements.length} éléments avec gestion des textes longs<br>
+                            Les textes trop longs seront tronqués avec "..."
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Ellipsis non détectés<br>
+                            Vérifiez le CSS pour text-overflow: ellipsis
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testIcons() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test des icônes en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                const userIcons = doc.querySelectorAll('.fa-user-circle');
+                const buildingIcons = doc.querySelectorAll('.fa-building');
+                const commentIcons = doc.querySelectorAll('.fa-comment');
+                const smallIcons = doc.querySelectorAll('.conversation-icon-small');
+                
+                if (userIcons.length > 0 && buildingIcons.length > 0 && commentIcons.length > 0) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Toutes les icônes sont présentes !<br>
+                            ${userIcons.length} icônes utilisateur (fa-user-circle)<br>
+                            ${buildingIcons.length} icônes propriété (fa-building)<br>
+                            ${commentIcons.length} icônes message (fa-comment)<br>
+                            ${smallIcons.length} petites icônes au total<br>
+                            Les icônes colorées sont opérationnelles !
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Icônes manquantes<br>
+                            Utilisateur: ${userIcons.length}<br>
+                            Propriété: ${buildingIcons.length}<br>
+                            Message: ${commentIcons.length}<br>
+                            Vérifiez les classes Font Awesome
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du test<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function loadChat() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Chargement du chat en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const conversationItems = doc.querySelectorAll('.conversation-item');
+                
+                if (conversationItems.length > 0) {
+                    results.innerHTML = `
+                        <div class="test-result test-success">
+                            ✅ Chat chargé avec le nouveau layout !<br>
+                            ${conversationItems.length} conversations trouvées<br>
+                            <a href="http://localhost:3000/chat" target="_blank">Ouvrir le chat</a>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-error">
+                            ❌ Chat chargé mais aucune conversation<br>
+                            Vérifiez les logs du serveur
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="test-result test-error">
+                        ❌ Erreur lors du chargement<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testNewLayout();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

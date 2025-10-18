@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+            --gray: #6c757d;
+            --dark-color: #2c3e50;
+            --border-color: #e9ecef;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background: var(--light-gray);
+        }
+
+        /* Contenu principal */
+        .main-content {
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--gray);
+        }
+
+        .breadcrumb a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* Détails de la propriété */
+        .property-details {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        /* Slider d'images */
+        .image-slider {
+            position: relative;
+            height: 500px;
+            overflow: hidden;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slider-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+
+        .slider-slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .slider-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slider-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            color: var(--white);
+            padding: 40px;
+            z-index: 2;
+        }
+
+        .property-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .property-location {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Contrôles du slider */
+        .slider-controls {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+            z-index: 3;
+        }
+
+        .slider-controls:hover {
+            background: var(--white);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .slider-prev {
+            left: 20px;
+        }
+
+        .slider-next {
+            right: 20px;
+        }
+
+        /* Indicateurs du slider */
+        .slider-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 3;
+        }
+
+        .slider-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-indicator.active {
+            background: var(--white);
+            transform: scale(1.2);
+        }
+
+        /* Compteur d'images */
+        .image-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 3;
+        }
+
+        .property-content {
+            padding: 40px;
+        }
+
+        .property-info {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .property-main {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .property-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .property-description {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--gray);
+            margin-bottom: 30px;
+        }
+
+        /* Section Localisation */
+        .location-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--light-gray);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .location-section h3 {
+            color: var(--dark-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .location-section h3 i {
+            color: var(--primary-color);
+        }
+
+        .location-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .location-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .location-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .location-value {
+            font-size: 1.1rem;
+            color: var(--dark-color);
+            font-weight: 500;
+        }
+
+        .city-highlight {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .property-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: var(--light-gray);
+            border-radius: 12px;
+        }
+
+        .feature-item i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            width: 20px;
+        }
+
+        .feature-label {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .feature-value {
+            color: var(--gray);
+        }
+
+        .property-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .property-status {
+            padding: 20px;
+            background: var(--light-gray);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-rented {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-vacant {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .property-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-property {
+            padding: 15px 30px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-property:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-interest {
+            background: var(--primary-color);
+            color: var(--white);
+            font-size: 1.1rem;
+        }
+
+        .btn-interest:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-back {
+            background: var(--light-gray);
+            color: var(--dark-color);
+        }
+
+        .btn-back:hover {
+            background: var(--gray);
+            color: var(--white);
+        }
+
+        /* Message de connexion requise */
+        .login-required-message {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px solid #dee2e6;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-required-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .message-icon {
+            margin-bottom: 16px;
+        }
+
+        .message-icon i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            opacity: 0.8;
+        }
+
+        .message-content h4 {
+            color: var(--dark-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .message-content p {
+            color: var(--gray);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-login {
+            background: var(--primary-color);
+            color: var(--white);
+            font-size: 0.95rem;
+            padding: 12px 20px;
+        }
+
+        .btn-login:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-register {
+            background: var(--secondary-color);
+            color: var(--white);
+            font-size: 0.95rem;
+            padding: 12px 20px;
+        }
+
+        .btn-register:hover {
+            background: #6a4c93;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px 10px;
+            }
+
+            .image-slider {
+                height: 300px;
+            }
+
+            .property-title {
+                font-size: 2rem;
+            }
+
+            .property-info {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .property-content {
+                padding: 20px;
+            }
+
+            .property-features {
+                grid-template-columns: 1fr;
+            }
+
+            .location-details {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .slider-controls {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .slider-prev {
+                left: 10px;
+            }
+
+            .slider-next {
+                right: 10px;
+            }
+
+            .message-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-login,
+            .btn-register {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-slider {
+                height: 250px;
+            }
+
+            .property-title {
+                font-size: 1.5rem;
+            }
+
+            .property-price {
+                font-size: 1.5rem;
+            }
+
+            .slider-overlay {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Contenu principal -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb">
+                <a href="/">Accueil</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="/properties">Propriétés</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>Détails</span>
+            </nav>
+
+            <!-- Détails de la propriété -->
+            <div class="property-details">
+                <!-- Slider d'images -->
+                <div class="image-slider">
+                    <div class="slider-container">
+                        <div class="slider-track" id="sliderTrack">
+                            <% if (property.images && property.images.length > 0) { %>
+                                <% property.images.forEach((image, index) => { %>
+                                    <div class="slider-slide">
+                                        <img src="<%= image %>" alt="<%= property.title %> - Image <%= index + 1 %>" class="slider-image">
+                                        <% if (index === 0) { %>
+                                            <div class="slider-overlay">
+                                                <h1 class="property-title"><%= property.title %></h1>
+                                                <p class="property-location">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <%= property.location %>
+                                                </p>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="slider-slide">
+                                    <img src="<%= property.image %>" alt="<%= property.title %>" class="slider-image">
+                                    <div class="slider-overlay">
+                                        <h1 class="property-title"><%= property.title %></h1>
+                                        <p class="property-location">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <%= property.location %>
+                                        </p>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Contrôles du slider -->
+                        <% if (property.images && property.images.length > 1) { %>
+                            <button class="slider-controls slider-prev" id="prevBtn">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="slider-controls slider-next" id="nextBtn">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <!-- Indicateurs -->
+                            <div class="slider-indicators" id="indicators">
+                                <% property.images.forEach((_, index) => { %>
+                                    <span class="slider-indicator <%= index === 0 ? 'active' : '' %>" data-slide="<%= index %>"></span>
+                                <% }); %>
+                            </div>
+                            
+                            <!-- Compteur d'images -->
+                            <div class="image-counter">
+                                <span id="currentSlide">1</span> / <span id="totalSlides"><%= property.images.length %></span>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="property-content">
+                    <div class="property-info">
+                        <div class="property-main">
+                            <div class="property-price"><%= property.price %></div>
+                            <p class="property-description"><%= property.description %></p>
+
+                            <!-- Section Localisation -->
+                            <div class="location-section">
+                                <h3><i class="fas fa-map-marker-alt"></i> Localisation</h3>
+                                <div class="location-details">
+                                    <div class="location-item">
+                                        <div class="location-label">Ville</div>
+                                        <div class="location-value city-highlight"><%= property.city %></div>
+                                    </div>
+                                    <div class="location-item">
+                                        <div class="location-label">Adresse</div>
+                                        <div class="location-value"><%= property.location %></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="property-features">
+                                <div class="feature-item">
+                                    <i class="fas fa-home"></i>
+                                    <div>
+                                        <div class="feature-label">Type</div>
+                                        <div class="feature-value"><%= property.type %></div>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-bed"></i>
+                                    <div>
+                                        <div class="feature-label">Pièces</div>
+                                        <div class="feature-value"><%= property.features.rooms %></div>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                    <div>
+                                        <div class="feature-label">Surface</div>
+                                        <div class="feature-value"><%= property.features.area %></div>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-layer-group"></i>
+                                    <div>
+                                        <div class="feature-label">Étage</div>
+                                        <div class="feature-value"><%= property.features.floor %></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-sidebar">
+                            <div class="property-status">
+                                <h3>Statut</h3>
+                                <span class="status-badge status-<%= property.status %>">
+                                    <%= property.status === 'rented' ? 'Loué' : 'Disponible' %>
+                                </span>
+                            </div>
+
+                            <div class="property-actions">
+                                <% if (isAuthenticated) { %>
+                                    <a href="/chat?propertyId=<%= property.id %>&message=<%= encodeURIComponent('Je m\'appelle ' + user.firstName + ' ' + user.lastName + ' et je suis très intéressé par votre propriété ' + property.title + ', je souhaiterais effectuer une visite au plus tôt.') %>" class="btn-property btn-interest">
+                                        <i class="fas fa-heart"></i>
+                                        Je suis intéressé
+                                    </a>
+                                <% } else { %>
+                                    <div class="login-required-message">
+                                        <div class="message-icon">
+                                            <i class="fas fa-lock"></i>
+                                        </div>
+                                        <div class="message-content">
+                                            <h4>Connexion requise</h4>
+                                            <p>Vous devez être connecté pour contacter le propriétaire de cette propriété.</p>
+                                            <div class="message-actions">
+                                                <a href="/auth/login" class="btn-property btn-login">
+                                                    <i class="fas fa-sign-in-alt"></i>
+                                                    Se connecter
+                                                </a>
+                                                <a href="/auth/register" class="btn-property btn-register">
+                                                    <i class="fas fa-user-plus"></i>
+                                                    S'inscrire
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% } %>
+                                <a href="/properties" class="btn-property btn-back">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Retour aux propriétés
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Debug de l'authentification côté client
+        console.log('🔐 Debug authentification côté client:', {
+            isAuthenticated: <%= isAuthenticated %>,
+            user: <%- JSON.stringify(user) %>,
+            hasUser: <%= user ? 'true' : 'false' %>
+        });
+
+        // Gestion du slider d'images
+        class ImageSlider {
+            constructor() {
+                this.currentSlide = 0;
+                this.slides = document.querySelectorAll('.slider-slide');
+                this.totalSlides = this.slides.length;
+                this.track = document.getElementById('sliderTrack');
+                this.prevBtn = document.getElementById('prevBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.indicators = document.querySelectorAll('.slider-indicator');
+                this.currentSlideSpan = document.getElementById('currentSlide');
+                this.totalSlidesSpan = document.getElementById('totalSlides');
+                
+                if (this.totalSlides > 1) {
+                    this.init();
+                }
+            }
+
+            init() {
+                // Événements des boutons
+                if (this.prevBtn) {
+                    this.prevBtn.addEventListener('click', () => this.prevSlide());
+                }
+                if (this.nextBtn) {
+                    this.nextBtn.addEventListener('click', () => this.nextSlide());
+                }
+
+                // Événements des indicateurs
+                this.indicators.forEach((indicator, index) => {
+                    indicator.addEventListener('click', () => this.goToSlide(index));
+                });
+
+                // Navigation au clavier
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') this.prevSlide();
+                    if (e.key === 'ArrowRight') this.nextSlide();
+                });
+
+                // Auto-play (optionnel)
+                this.startAutoPlay();
+            }
+
+            updateSlider() {
+                const translateX = -this.currentSlide * 100;
+                this.track.style.transform = `translateX(${translateX}%)`;
+
+                // Mettre à jour les indicateurs
+                this.indicators.forEach((indicator, index) => {
+                    indicator.classList.toggle('active', index === this.currentSlide);
+                });
+
+                // Mettre à jour le compteur
+                if (this.currentSlideSpan) {
+                    this.currentSlideSpan.textContent = this.currentSlide + 1;
+                }
+            }
+
+            nextSlide() {
+                this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+                this.updateSlider();
+            }
+
+            prevSlide() {
+                this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
+                this.updateSlider();
+            }
+
+            goToSlide(index) {
+                this.currentSlide = index;
+                this.updateSlider();
+            }
+
+            startAutoPlay() {
+                // Auto-play toutes les 5 secondes
+                setInterval(() => {
+                    if (this.totalSlides > 1) {
+                        this.nextSlide();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Initialiser le slider quand la page est chargée
+        document.addEventListener('DOMContentLoaded', () => {
+            new ImageSlider();
+        });
+
+        // Gestion du bouton "Je suis intéressé"
+        document.querySelector('.btn-interest').addEventListener('click', function(e) {
+            // Vérifier si l'utilisateur est connecté
+            // Pour l'instant, on redirige directement vers le chat
+            // Dans une vraie application, on vérifierait l'authentification ici
+        });
+    </script>
+</body>
+</html>

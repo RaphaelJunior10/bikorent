@@ -344,7 +344,7 @@
                     <div class="form-group">
                         <label for="currency">Devise</label>
                         <select id="currency" name="currency" disabled>
-                            <option value="XAF" selected>Franc CFA (XAF)</option>
+                            <option value="XAF" selected >Franc CFA (XAF)</option>
                             <option value="EUR">Euro (€)</option>
                             <option value="USD">Dollar US ($)</option>
                             <option value="GBP">Livre Sterling (£)</option>
@@ -368,13 +368,47 @@
                 <p>Gérez votre abonnement et vos informations de paiement</p>
             </div>
             
+            <!-- Alerte de paiement en retard -->
+            <% if (typeof paymentOverdue !== 'undefined' && paymentOverdue.isOverdue) { %>
+            <div class="payment-overdue-banner payment-level-<%= paymentOverdue.alertLevel %>">
+                <div class="banner-content">
+                    <div class="banner-icon">
+                        <% if (paymentOverdue.alertLevel === 3) { %>
+                            <i class="fas fa-ban"></i>
+                        <% } else { %>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        <% } %>
+                    </div>
+                    <div class="banner-info">
+                        <% if (paymentOverdue.alertLevel === 3) { %>
+                            <h3>Compte bloqué</h3>
+                        <% } else if (paymentOverdue.alertLevel === 2) { %>
+                            <h3>Restrictions appliquées</h3>
+                        <% } else { %>
+                            <h3>Paiement en retard</h3>
+                        <% } %>
+                        <p>Montant dû : <strong><%= paymentOverdue.amountDue.toLocaleString() %> FCFA</strong></p>
+                        <% if (paymentOverdue.alertLevel > 1) { %>
+                            <p><strong><%= paymentOverdue.alertMessage %></strong></p>
+                        <% } %>
+                    </div>
+                    <div class="banner-actions">
+                        <button class="btn btn-primary" id="payNowBtn">
+                            <i class="fas fa-credit-card"></i>
+                            Payer maintenant
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+            
             <div class="billing-section">
-                <div class="current-plan">
+                <!--<div class="current-plan">
                     <h3>Plan actuel</h3>
                     <div class="plan-card">
                         <div class="plan-info">
                             <h4>Plan Premium</h4>
-                            <p>€29.99/mois</p>
+                            <p>FCFA 29.99/mois</p>
                             <ul>
                                 <li>Gestion illimitée de propriétés</li>
                                 <li>Rapports avancés</li>
@@ -387,61 +421,36 @@
                             <button class="btn-danger">Annuler l'abonnement</button>
                         </div>
                     </div>
+                </div>-->
+
+                <div class="available-plans">
+                    <h3>Plans disponibles</h3>
+                    <div class="billing-plans-container">
+                        <!-- Les plans de facturation seront chargés dynamiquement ici -->
+                    </div>
                 </div>
 
                 <div class="payment-methods">
                     <h3>Méthodes de paiement</h3>
-                    <div class="payment-method">
-                        <div class="method-info">
-                            <i class="fab fa-cc-visa"></i>
-                            <div>
-                                <h4>Visa se terminant par 4242</h4>
-                                <p>Expire le 12/25</p>
-                            </div>
-                        </div>
-                        <div class="method-actions">
-                            <button class="btn-secondary">Modifier</button>
-                            <button class="btn-danger">Supprimer</button>
-                        </div>
+                    <div class="payment-methods-list" id="paymentMethodsList">
+                        <!-- Les méthodes de paiement seront chargées dynamiquement ici -->
                     </div>
-                    <button class="btn-primary">
+                    <button class="btn-primary" onclick="showAddPaymentMethodModal()">
                         <i class="fas fa-plus"></i> Ajouter une méthode de paiement
                     </button>
                 </div>
 
                 <div class="billing-history">
-                    <h3>Historique de facturation</h3>
+                    <div class="billing-history-header">
+                        <h3>Historique de facturation</h3>
+                        <div class="billing-stats" id="billingStats">
+                            <!-- Les statistiques seront chargées dynamiquement -->
+                        </div>
+                    </div>
                     <div class="billing-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Montant</th>
-                                    <th>Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>01/03/2024</td>
-                                    <td>Plan Premium - Mars 2024</td>
-                                    <td>€29.99</td>
-                                    <td><span class="status-paid">Payé</span></td>
-                                </tr>
-                                <tr>
-                                    <td>01/02/2024</td>
-                                    <td>Plan Premium - Février 2024</td>
-                                    <td>€29.99</td>
-                                    <td><span class="status-paid">Payé</span></td>
-                                </tr>
-                                <tr>
-                                    <td>01/01/2024</td>
-                                    <td>Plan Premium - Janvier 2024</td>
-                                    <td>€29.99</td>
-                                    <td><span class="status-paid">Payé</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div id="billingHistoryList">
+                            <!-- L'historique sera chargé dynamiquement -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -515,12 +524,271 @@
     </div>
 </div>
 
+<!-- Modal pour ajouter une méthode de paiement -->
+<div id="addPaymentMethodModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Ajouter une méthode de paiement</h3>
+            <button class="close-modal" onclick="closeAddPaymentMethodModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="addPaymentMethodForm">
+                <div class="form-group">
+                    <label for="paymentMethodType">Type de méthode de paiement</label>
+                    <select id="paymentMethodType" name="type" required>
+                        <option value="">Sélectionner un type</option>
+                        <!-- Les options seront chargées dynamiquement -->
+                    </select>
+                </div>
+                
+                <div id="paymentMethodFields">
+                    <!-- Les champs seront générés dynamiquement selon le type sélectionné -->
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isDefaultPaymentMethod" name="isDefault">
+                        <span class="checkmark"></span>
+                        Définir comme méthode de paiement par défaut
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeAddPaymentMethodModal()">Annuler</button>
+            <button type="button" class="btn-primary" onclick="addPaymentMethod()">
+                <i class="fas fa-plus"></i> Ajouter
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- eslint-disable-next-line -->
 <script>
     // eslint-disable-next-line
     // @ts-ignore
     // eslint-disable-next-line no-undef
     window.parametresData = <%- JSON.stringify(parametresData) %>;
+</script>
+
+<!-- Styles pour la bannière de paiement en retard -->
+<style>
+    .payment-overdue-banner {
+        color: white;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-radius: 12px;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    .payment-overdue-banner.payment-level-1 {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .payment-overdue-banner.payment-level-2 {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    }
+
+    .payment-overdue-banner.payment-level-3 {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .banner-content {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        max-width: 100%;
+    }
+
+    .banner-icon {
+        font-size: 2.5rem;
+        color: #fef2f2;
+        flex-shrink: 0;
+    }
+
+    .banner-info {
+        flex: 1;
+    }
+
+    .banner-info h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .banner-info p {
+        margin: 0.25rem 0;
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .banner-actions {
+        flex-shrink: 0;
+    }
+
+    .banner-actions .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+    }
+
+    .banner-actions .btn-primary {
+        background: white;
+        color: #ef4444;
+    }
+
+    .banner-actions .btn-primary:hover {
+        background: #fef2f2;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .banner-actions .btn-primary:disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    @media (max-width: 768px) {
+        .banner-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .banner-actions {
+            width: 100%;
+        }
+
+        .banner-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Gestion du bouton "Payer maintenant"
+    document.addEventListener('DOMContentLoaded', function() {
+        const payNowBtn = document.getElementById('payNowBtn');
+        
+        if (payNowBtn) {
+            payNowBtn.addEventListener('click', async function() {
+                const originalText = payNowBtn.innerHTML;
+                payNowBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement...';
+                payNowBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/parametres/api/process-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            amount: window.parametresData?.paymentOverdue?.amountDue || 0
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Afficher un message de succès
+                        showPaymentSuccess('Paiement traité avec succès !');
+                        
+                        // Recharger la page après 2 secondes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        showPaymentError(result.message || 'Erreur lors du traitement du paiement');
+                        payNowBtn.innerHTML = originalText;
+                        payNowBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    showPaymentError('Erreur lors du traitement du paiement');
+                    payNowBtn.innerHTML = originalText;
+                    payNowBtn.disabled = false;
+                }
+            });
+        }
+    });
+
+    function showPaymentSuccess(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    function showPaymentError(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Ajouter l'animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 
 <script src="/js/parametres.js"></script> 

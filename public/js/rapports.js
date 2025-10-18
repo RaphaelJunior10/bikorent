@@ -466,30 +466,16 @@ function getChartOptions(data, title = '') {
                 grid: {
                     display: true
                 },
-                // Configuration pour le scroll horizontal - permettre l'affichage complet
-                min: 0,
-                max: data.labels.length - 1,
-                afterBuildTicks: function(axis) {
-                    // Assurer un espacement minimum entre les points
-                    const ticks = axis.ticks;
-                    const minSpacing = isSmallScreen ? 50 : 60; // Réduire l'espacement sur petits écrans
-                    if (ticks.length > 1) {
-                        const spacing = axis.width / (ticks.length - 1);
-                        console.log('📏 Espacement calculé:', spacing, 'pixels entre les points');
-                        if (spacing < minSpacing) {
-                            const skip = Math.ceil(ticks.length / (axis.width / minSpacing));
-                            console.log('🔄 Application du skip:', skip, 'pour maintenir l\'espacement minimum');
-                            axis.ticks = ticks.filter((_, index) => index % skip === 0);
-                        }
-                    }
-                }
+                // Configuration pour permettre le scroll horizontal
+                type: 'category',
+                offset: false
             },
             y: {
                 beginAtZero: true,
                 position: 'left',
                 ticks: {
                     callback: function(value) {
-                        return '€' + value;
+                        return 'FCFA ' + value;
                     },
                     font: {
                         size: isSmallScreen ? 10 : 12
@@ -504,7 +490,10 @@ function getChartOptions(data, title = '') {
         interaction: {
             intersect: false,
             mode: 'index'
-        }
+        },
+        // Configuration responsive pour s'adapter au conteneur
+        responsive: true,
+        maintainAspectRatio: false
     };
 }
 
@@ -526,6 +515,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initSidebar(); // Initialiser le sidebar
     markActivePage(); // Marquer la page active
     setupEventListeners();
+    
+    // Appliquer les restrictions de plan
+    applyBillingRestrictions();
     
     // Vérifier que les données sont disponibles avant d'initialiser les graphiques
     if (rapportsData && rapportsData.proprietaire && rapportsData.locataire) {
@@ -639,20 +631,54 @@ function initializeCharts() {
 
 // Initialisation des graphiques propriétaire
 function initializeProprietaireCharts() {
-    // Graphique global des revenus
-    createRevenusGlobauxChart();
+    const permissions = window.pagePermissions;
+
+    //si le plan est basique, ne pas afficher les graphiques
+    if (!permissions.viewAdvancedReports?.allowed && !permissions.viewPropertyReports?.allowed){
+        return;
+    }else if (permissions.viewAdvancedReports?.allowed && !permissions.viewPropertyReports?.allowed){
+        //Plan standard
+        // Graphique global des revenus
+        createRevenusGlobauxChart();
+        return;
+    }else if (permissions.viewAdvancedReports?.allowed && permissions.viewPropertyReports?.allowed){
+        //Plan premium & enterprise
+        // Graphique global des revenus
+        createRevenusGlobauxChart();
+        // Graphiques par propriété
+        createProprieteCharts();
+        return;
+    }
     
-    // Graphiques par propriété
-    createProprieteCharts();
+    
 }
 
 // Initialisation des graphiques locataire
 function initializeLocataireCharts() {
-    // Graphique global des dépenses
-    createDepensesGlobauxChart();
+    const permissions = window.pagePermissions;
     
-    // Graphiques par propriété louée
-    createLocataireProprieteCharts();
+    //si le plan est basique, ne pas afficher les graphiques
+    if (!permissions.viewAdvancedReports?.allowed && !permissions.viewPropertyReports?.allowed){
+        // Plan basique : générer des faux graphiques
+        generateFakeDepensesChart();
+        generateFakeLocatairePropertiesCharts();
+        return;
+    }else if (permissions.viewAdvancedReports?.allowed && !permissions.viewPropertyReports?.allowed){
+        //Plan standard
+        // Graphique global des dépenses
+        createDepensesGlobauxChart();
+        // Faux graphiques par propriété
+        generateFakeLocatairePropertiesCharts();
+        return;
+    }else if (permissions.viewAdvancedReports?.allowed && permissions.viewPropertyReports?.allowed){
+        //Plan premium & enterprise
+        // Graphique global des dépenses
+        createDepensesGlobauxChart();
+        // Graphiques par propriété
+        createLocataireProprieteCharts();
+        return;
+    }
+    
 }
 
 // Création du graphique global des revenus
@@ -726,7 +752,7 @@ function createProprieteCharts() {
         chartDiv.innerHTML = `
             <div class="chart-header">
                 <h3>${propriete.nom}</h3>
-                <p>Locataire: ${propriete.locataire} | Loyer: €${propriete.loyer}/mois</p>
+                <p>Locataire: ${propriete.locataire} | Loyer: FCFA ${propriete.loyer}/mois</p>
             </div>
             <div class="chart-wrapper">
                 <canvas id="chart-${propriete.nom.replace(/\s+/g, '-')}"></canvas>
@@ -744,9 +770,21 @@ function createProprieteChart(propriete) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
 
+    // Détruire le graphique existant
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+    }
+
     const data = getProprieteData(propriete);
+    console.log('📊 Données du graphique propriété:', {
+        propriete: propriete.nom,
+        labelsCount: data.labels.length,
+        labels: data.labels.slice(0, 5) + '...', // Afficher les 5 premiers
+        revenusCumulesCount: data.revenusCumules.length,
+        revenusMensuelsCount: data.revenusMensuels.length
+    });
     
-    const chart = new Chart(ctx, {
+    charts[canvasId] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: data.labels,
@@ -769,10 +807,8 @@ function createProprieteChart(propriete) {
                 }
             ]
         },
-        options: getChartOptions(data)
+        options: getChartOptions(data, 'Évolution des revenus par propriété')
     });
-    
-    charts[canvasId] = chart;
 }
 
 // Création du graphique global des dépenses (locataire)
@@ -840,7 +876,7 @@ function createLocataireProprieteCharts() {
         chartDiv.innerHTML = `
             <div class="chart-header">
                 <h3>${propriete.nom}</h3>
-                <p>Loyer: €${propriete.loyer}/mois</p>
+                <p>Loyer: FCFA ${propriete.loyer}/mois</p>
             </div>
             <div class="chart-wrapper">
                 <canvas id="locataire-chart-${propriete.nom.replace(/\s+/g, '-')}"></canvas>
@@ -858,9 +894,21 @@ function createLocataireProprieteChart(propriete) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
 
+    // Détruire le graphique existant
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+    }
+
     const data = getLocataireProprieteData(propriete);
+    console.log('📊 Données du graphique locataire propriété:', {
+        propriete: propriete.nom,
+        labelsCount: data.labels.length,
+        labels: data.labels.slice(0, 5) + '...', // Afficher les 5 premiers
+        depensesCumuleesCount: data.depensesCumulees.length,
+        depensesMensuellesCount: data.depensesMensuelles.length
+    });
     
-    const chart = new Chart(ctx, {
+    charts[canvasId] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: data.labels,
@@ -883,10 +931,8 @@ function createLocataireProprieteChart(propriete) {
                 }
             ]
         },
-        options: getChartOptions(data)
+        options: getChartOptions(data, 'Évolution des dépenses par propriété')
     });
-    
-    charts[canvasId] = chart;
 }
 
 // Fonctions de génération des données
@@ -1095,7 +1141,7 @@ function updateStatsProprietaire() {
         ? Math.round(((data.revenusCumules[data.revenusCumules.length - 1] - data.revenusCumules[data.revenusCumules.length - 2]) / data.revenusCumules[data.revenusCumules.length - 2]) * 100)
         : 0);*/
 
-    document.getElementById('revenusTotaux').textContent = `€${revenusTotaux}`;
+    document.getElementById('revenusTotaux').textContent = `FCFA ${revenusTotaux}`;
     document.getElementById('tauxOccupation').textContent = `${tauxOccupation}%`;
     document.getElementById('proprietesActives').textContent = proprietesActives;
     //document.getElementById('croissance').textContent = `${croissance > 0 ? '+' : ''}${croissance}%`;
@@ -1114,10 +1160,10 @@ function updateStatsLocataire() {
     }).length;
     //const economies = rapportsData.locataire?.stats?.economies || 0; // À calculer selon la logique métier
 
-    document.getElementById('depensesTotales').textContent = `€${depensesTotales}`;
+    document.getElementById('depensesTotales').textContent = `FCFA ${depensesTotales}`;
     document.getElementById('proprietesLouees').textContent = proprietesLouees;
     document.getElementById('paiementsAJour').textContent = paiementsAJour;
-    //document.getElementById('economies').textContent = `€${economies}`;
+    //document.getElementById('economies').textContent = `FCFA ${economies}`;
 }
 
 // Fonctions d'export
@@ -1136,7 +1182,7 @@ function exportData() {
         ['Date de génération', new Date().toLocaleDateString('fr-FR')],
         [''],
         ['STATISTIQUES GLOBALES'],
-        ['Revenus totaux', `€${data.revenusCumules[data.revenusCumules.length - 1] || 0}`],
+        ['Revenus totaux', `FCFA ${data.revenusCumules[data.revenusCumules.length - 1] || 0}`],
         ['Propriétés actives', proprietes.length],
         ['Taux d\'occupation', `${Math.round((proprietes.length / rapportsData.proprietaire.proprietes.length) * 100)}%`],
         [''],
@@ -1148,8 +1194,8 @@ function exportData() {
     data.labels.forEach((mois, index) => {
         summaryData.push([
             mois,
-            `€${data.revenusMensuels[index]}`,
-            `€${data.revenusCumules[index]}`
+            `FCFA ${data.revenusMensuels[index]}`,
+            `FCFA ${data.revenusCumules[index]}`
         ]);
     });
     
@@ -1172,9 +1218,9 @@ function exportData() {
         proprietesData.push([
             propriete.nom,
             propriete.locataire,
-            `€${propriete.loyer}`,
+            `FCFA ${propriete.loyer}`,
             propriete.type,
-            `€${revenusTotaux}`,
+            `FCFA ${revenusTotaux}`,
             moisPayes,
             `${tauxPaiement}%`
         ]);
@@ -1201,7 +1247,7 @@ function exportData() {
         mois.forEach(mois => {
             const paiement = propriete.paiements[mois];
             if (paiement && paiement.paye) {
-                row.push(`€${paiement.montant}`);
+                row.push(`FCFA ${paiement.montant}`);
             } else {
                 row.push('Non payé');
             }
@@ -1232,7 +1278,7 @@ function exportDataLocataire() {
         ['Date de génération', new Date().toLocaleDateString('fr-FR')],
         [''],
         ['STATISTIQUES GLOBALES'],
-        ['Dépenses totales', `€${data.depensesCumulees[data.depensesCumulees.length - 1] || 0}`],
+        ['Dépenses totales', `FCFA ${data.depensesCumulees[data.depensesCumulees.length - 1] || 0}`],
         ['Propriétés louées', proprietes.length],
         ['Paiements à jour', proprietes.filter(p => {
             const dernierMois = getMoisLabels()[getMoisLabels().length - 1];
@@ -1247,8 +1293,8 @@ function exportDataLocataire() {
     data.labels.forEach((mois, index) => {
         summaryData.push([
             mois,
-            `€${data.depensesMensuelles[index]}`,
-            `€${data.depensesCumulees[index]}`
+            `FCFA ${data.depensesMensuelles[index]}`,
+            `FCFA ${data.depensesCumulees[index]}`
         ]);
     });
     
@@ -1272,8 +1318,8 @@ function exportDataLocataire() {
         
         proprietesData.push([
             propriete.nom,
-            `€${propriete.loyer}`,
-            `€${depensesTotales}`,
+            `FCFA ${propriete.loyer}`,
+            `FCFA ${depensesTotales}`,
             moisPayes,
             `${tauxPaiement}%`,
             statutActuel
@@ -1301,7 +1347,7 @@ function exportDataLocataire() {
         mois.forEach(mois => {
             const paiement = propriete.paiements[mois];
             if (paiement && paiement.paye) {
-                row.push(`€${paiement.montant}`);
+                row.push(`FCFA ${paiement.montant}`);
             } else {
                 row.push('Non payé');
             }
@@ -1315,4 +1361,319 @@ function exportDataLocataire() {
     // Télécharger le fichier Excel
     const fileName = `rapport-locataire-${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
+}
+
+// ========================================
+// Gestion des restrictions de facturation
+// ========================================
+
+// Appliquer les restrictions de plan
+function applyBillingRestrictions() {
+    // Vérifier si les permissions sont disponibles
+    if (!window.pagePermissions) {
+        console.log('Permissions de facturation non disponibles');
+        return;
+    }
+
+    const permissions = window.pagePermissions;
+    
+    
+    // Plan basique : masquer tous les graphiques avancés
+    if (!permissions.viewAdvancedReports?.allowed && !permissions.viewPropertyReports?.allowed) {
+        console.log('🔒 Plan basique détecté - masquage des graphiques avancés');
+        
+        // Masquer seulement le canvas du graphique global des revenus
+        const globalChartCanvas = document.getElementById('revenusGlobauxChart');
+        if (globalChartCanvas) {
+            globalChartCanvas.style.display = 'none';
+        }
+        
+        // Masquer le conteneur des graphiques par propriété
+        const propertyChartsContainer = document.getElementById('propertiesCharts');
+        if (propertyChartsContainer) {
+            propertyChartsContainer.style.display = 'none';
+        }
+        
+        // Générer les faux graphiques
+        generateFakeRevenusChart();
+        generateFakePropertiesCharts();
+    }
+    
+    // Plan standard : masquer seulement les graphiques par propriété
+    if (permissions.viewAdvancedReports?.allowed && !permissions.viewPropertyReports?.allowed) {
+        console.log('🔒 Plan standard détecté - masquage des graphiques par propriété');
+        
+        // Masquer seulement le conteneur des graphiques par propriété
+        const propertyChartsContainer = document.getElementById('propertiesCharts');
+        if (propertyChartsContainer) {
+            propertyChartsContainer.style.display = 'none';
+        }
+        
+        // Générer les faux graphiques par propriété
+        generateFakePropertiesCharts();
+    }
+    
+    // Plan premium et enterprise : aucune restriction
+    if (permissions.viewAdvancedReports?.allowed && permissions.viewPropertyReports?.allowed) {
+        console.log('✅ Plan premium/enterprise - accès complet aux graphiques');
+    }
+}
+
+// Générer un faux graphique de revenus globaux
+function generateFakeRevenusChart() {
+    const fakeChartContainer = document.getElementById('fakeRevenusGlobauxChart');
+    if (!fakeChartContainer) return;
+    
+    // Générer des données fictives différentes des vraies données
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    const revenues = [1800, 1250, 1380, 2020, 1980, 2100, 1550, 1320, 1650, 1900, 2250, 2400]; // Données différentes des vraies
+    
+    // Créer un canvas pour le faux graphique
+    const canvas = document.createElement('canvas');
+    canvas.id = 'fakeRevenusGlobauxChartCanvas';
+    
+    fakeChartContainer.innerHTML = '';
+    fakeChartContainer.appendChild(canvas);
+    
+    // Créer le faux graphique avec Chart.js comme les vrais graphiques
+    const chart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Revenus cumulés',
+                data: revenues,
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: getChartOptions({
+            labels: months,
+            revenusCumules: revenues,
+            revenusMensuels: revenues
+        }, 'Données fictives')
+    });
+}
+
+// Générer des faux graphiques par propriété
+function generateFakePropertiesCharts() {
+    const fakeChartsContainer = document.getElementById('fakePropertiesCharts');
+    if (!fakeChartsContainer) return;
+    
+    // Données fictives pour un seul graphique avec 12 mois
+    const fakeData = {
+        name: 'Villa fictive - Quartier Résidentiel',
+        tenant: 'Jean Dupont',
+        rent: 1200,
+        data: [1150, 200, 600, 1200, 1000, 1000, 1200, 1500, 900, 800, 1300, 1200],
+        months: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    };
+    
+    // Créer un seul graphique avec les mêmes dimensions que les vrais graphiques
+    const fakeChartHTML = `
+        <div class="property-chart">
+            <div class="chart-header">
+                <h3>${fakeData.name}</h3>
+                <p>Locataire: ${fakeData.tenant} | Loyer: FCFA ${fakeData.rent}/mois</p>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="fake-property-chart"></canvas>
+                <div class="chart-overlay">
+                    <div class="upgrade-overlay-content">
+                        <div class="upgrade-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>Analyse par propriété non disponible</h3>
+                        <p>Visualisez les performances détaillées de chaque propriété avec un plan Premium ou supérieur.</p>
+                        <div class="upgrade-actions">
+                            <a href="/parametres?tab=billing" class="btn btn-primary">
+                                <i class="fas fa-arrow-up"></i> Mettre à niveau
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    fakeChartsContainer.innerHTML = fakeChartHTML;
+    
+    // Dessiner le faux graphique avec Chart.js comme les vrais graphiques
+    const canvas = document.getElementById('fake-property-chart');
+    if (canvas) {
+        const chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: fakeData.months,
+                datasets: [{
+                    label: 'Revenus mensuels',
+                    data: fakeData.data,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: false,
+                    tension: 0.4
+                }]
+            },
+            options: getChartOptions({
+                labels: fakeData.months,
+                revenusCumules: fakeData.data,
+                revenusMensuels: fakeData.data
+            })
+        });
+    }
+}
+
+// Générer un faux graphique de dépenses pour les locataires
+function generateFakeDepensesChart() {
+    const fakeChartContainer = document.getElementById('fakeDepensesGlobauxChart');
+    if (!fakeChartContainer) return;
+    
+    // Générer des données fictives pour les dépenses
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    const depenses = [800, 850, 820, 900, 880, 920, 910, 950, 930, 980, 960, 1000]; // Données différentes des vraies
+    
+    // Créer un canvas pour le faux graphique
+    const canvas = document.createElement('canvas');
+    canvas.id = 'fakeDepensesGlobauxChartCanvas';
+    
+    fakeChartContainer.innerHTML = '';
+    fakeChartContainer.appendChild(canvas);
+    
+    // Créer le faux graphique avec Chart.js comme les vrais graphiques
+    const chart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Dépenses cumulées',
+                data: depenses,
+                borderColor: '#EF4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: getChartOptions({
+            labels: months,
+            revenusCumules: depenses,
+            revenusMensuels: depenses
+        }, 'Données fictives')
+    });
+}
+
+// Générer des faux graphiques par propriété pour les locataires
+function generateFakeLocatairePropertiesCharts() {
+    const fakeChartsContainer = document.getElementById('fakeLocatairePropertiesCharts');
+    if (!fakeChartsContainer) return;
+    
+    // Données fictives pour un seul graphique avec 12 mois
+    const fakeData = {
+        name: 'Studio fictif - Centre Ville',
+        rent: 650,
+        data: [1650, 1550, 1130, 1600, 1750, 1850, 1350, 950, 1250, 1650, 1740, 1850],
+        months: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    };
+    
+    // Créer un seul graphique
+    const fakeChartHTML = `
+        <div class="property-chart">
+            <div class="chart-header">
+                <h3>${fakeData.name}</h3>
+                <p>Loyer: FCFA ${fakeData.rent}/mois</p>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="fake-locataire-chart"></canvas>
+                <div class="chart-overlay">
+                    <div class="upgrade-overlay-content">
+                        <div class="upgrade-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>Analyse par propriété non disponible</h3>
+                        <p>Visualisez les performances détaillées de chaque propriété avec un plan Premium ou supérieur.</p>
+                        <div class="upgrade-actions">
+                            <a href="/parametres?tab=billing" class="btn btn-primary">
+                                <i class="fas fa-arrow-up"></i> Mettre à niveau
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    fakeChartsContainer.innerHTML = fakeChartHTML;
+    
+    // Dessiner le faux graphique avec Chart.js comme les vrais graphiques
+    const canvas = document.getElementById('fake-locataire-chart');
+    if (canvas) {
+        const chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: fakeData.months,
+                datasets: [{
+                    label: 'Dépenses mensuelles',
+                    data: fakeData.data,
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: false,
+                    tension: 0.4
+                }]
+            },
+            options: getChartOptions({
+                labels: fakeData.months,
+                revenusCumules: fakeData.data,
+                revenusMensuels: fakeData.data
+            })
+        });
+    }
+}
+
+// Fonction pour afficher un message de mise à niveau
+function showUpgradeMessage(data) {
+    // Supprimer les messages existants
+    const existingMessages = document.querySelectorAll('.upgrade-message');
+    existingMessages.forEach(msg => msg.remove());
+    
+    // Créer le nouveau message
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'upgrade-message';
+    messageDiv.innerHTML = `
+        <div class="upgrade-content">
+            <div class="upgrade-icon">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="upgrade-text">
+                <h3>${data.title || 'Fonctionnalité non disponible'}</h3>
+                <p>${data.message || 'Cette fonctionnalité n\'est pas disponible avec votre plan actuel.'}</p>
+                ${data.suggestedPlan ? `<p class="suggested-plan"><strong>Plan recommandé :</strong> ${data.suggestedPlan}</p>` : ''}
+                ${data.featureDescription ? `<p class="feature-description">${data.featureDescription}</p>` : ''}
+            </div>
+            <div class="upgrade-actions">
+                <a href="/parametres?tab=billing" class="btn btn-primary">
+                    <i class="fas fa-arrow-up"></i> Mettre à niveau
+                </a>
+                <button class="btn btn-secondary" onclick="closeUpgradeMessage()">
+                    <i class="fas fa-times"></i> Fermer
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Ajouter au DOM
+    document.body.appendChild(messageDiv);
+    
+    // Animation d'apparition
+    setTimeout(() => {
+        messageDiv.classList.add('show');
+    }, 100);
+}
+
+// Fonction pour fermer le message de mise à niveau
+function closeUpgradeMessage() {
+    const upgradeMessage = document.querySelector('.upgrade-message');
+    if (upgradeMessage) {
+        upgradeMessage.style.display = 'none';
+    }
 } 

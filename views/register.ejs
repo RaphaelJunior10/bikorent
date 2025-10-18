@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Inscription - BikoRent' %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        
+        // Charger la configuration Firebase depuis le serveur
+        let firebaseConfig = null;
+        let app = null;
+        let auth = null;
+        
+        try {
+            const response = await fetch('/auth/firebase-config');
+            firebaseConfig = await response.json();
+            
+            // Initialiser Firebase
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            
+            // Exposer Firebase globalement
+            window.firebase = { auth, createUserWithEmailAndPassword };
+            console.log('✅ Firebase initialisé avec succès côté client (inscription)');
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'initialisation de Firebase:', error);
+            // Configuration de fallback
+            firebaseConfig = {
+                apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                authDomain: "bikorent-xxxxx.firebaseapp.com",
+                projectId: "bikorent-xxxxx",
+                storageBucket: "bikorent-xxxxx.appspot.com",
+                messagingSenderId: "123456789",
+                appId: "1:123456789:web:xxxxxxxxxxxxxxxx"
+            };
+            
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            window.firebase = { auth, createUserWithEmailAndPassword };
+        }
+    </script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            width: 100%;
+            max-width: 700px;
+            position: relative;
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .auth-logo {
+            position: relative;
+            z-index: 2;
+        }
+
+        .auth-logo i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .auth-form {
+            padding: 50px 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: var(--white);
+            color: var(--dark-color);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: var(--danger-color);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+
+        .strength-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-weak { background: var(--danger-color); width: 25%; }
+        .strength-fair { background: var(--accent-color); width: 50%; }
+        .strength-good { background: var(--success-color); width: 75%; }
+        .strength-strong { background: var(--success-color); width: 100%; }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .terms-checkbox input[type="checkbox"] {
+            width: auto;
+            margin-top: 4px;
+        }
+
+        .terms-checkbox label {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .terms-checkbox a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .terms-checkbox a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px 24px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            background: var(--secondary-color);
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.8;
+        }
+
+        .btn-submit .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .auth-divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+            color: var(--secondary-color);
+        }
+
+        .auth-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .auth-divider span {
+            background: var(--white);
+            padding: 0 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .social-login {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .btn-social {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: var(--white);
+            color: var(--dark-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-social:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 0 30px 30px;
+            color: var(--secondary-color);
+        }
+
+        .auth-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: var(--danger-color);
+            color: var(--white);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-message {
+            background: var(--success-color);
+            color: var(--white);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .back-to-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-to-home:hover {
+            transform: translateX(-5px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .auth-container {
+                margin: 10px;
+            }
+
+            .auth-header,
+            .auth-form {
+                padding: 30px 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-to-home">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
+    <div class="auth-container fade-in-up">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <i class="fas fa-home"></i>
+                <h1 class="auth-title">BikoRent</h1>
+                <p class="auth-subtitle">Créez votre compte gratuitement</p>
+            </div>
+        </div>
+
+        <div class="auth-form">
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText">Une erreur est survenue</span>
+            </div>
+
+            <div id="successMessage" class="success-message" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                Compte créé avec succès !
+            </div>
+
+            <form id="registerForm" method="POST" action="/auth/register">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Prénom *</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Nom *</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Téléphone</label>
+                    <input type="tel" id="phone" name="phone">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe *</label>
+                    <input type="password" id="password" name="password" required>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <span id="strengthText">Saisissez un mot de passe</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmer le mot de passe *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">
+                        J'accepte les <a href="/terms">conditions d'utilisation</a> et la <a href="/privacy">politique de confidentialité</a> *
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-user-plus"></i>
+                    Créer mon compte
+                </button>
+            </form>
+
+            <div class="auth-divider">
+                <span>ou</span>
+            </div>
+
+            <div class="social-login">
+                <a href="#" class="btn-social">
+                    <i class="fab fa-google"></i>
+                    Google
+                </a>
+                <a href="#" class="btn-social">
+                    <i class="fab fa-facebook-f"></i>
+                    Facebook
+                </a>
+            </div>
+
+            <div class="auth-footer">
+                <p>Déjà un compte ? <a href="/auth/login">Se connecter</a></p>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Password strength checker
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            
+            let strength = 0;
+            let text = '';
+            
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            strengthFill.className = 'strength-fill';
+            
+            switch (strength) {
+                case 0:
+                case 1:
+                    strengthFill.classList.add('strength-weak');
+                    text = 'Faible';
+                    break;
+                case 2:
+                    strengthFill.classList.add('strength-fair');
+                    text = 'Moyen';
+                    break;
+                case 3:
+                case 4:
+                    strengthFill.classList.add('strength-good');
+                    text = 'Bon';
+                    break;
+                case 5:
+                    strengthFill.classList.add('strength-strong');
+                    text = 'Très fort';
+                    break;
+            }
+            
+            strengthText.textContent = text;
+        });
+
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('.btn-submit');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const errorText = document.getElementById('errorText');
+            
+            // Hide previous messages
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // Validate form
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+            
+            if (password !== confirmPassword) {
+                errorText.textContent = 'Les mots de passe ne correspondent pas';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            if (!terms) {
+                errorText.textContent = 'Vous devez accepter les conditions d\'utilisation';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            // Disable submit button and show loader
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner"></i> Création du compte...';
+            submitBtn.style.opacity = '0.8';
+            
+            // Get form data
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const passwordValue = document.getElementById('password').value;
+            const confirmPasswordValue = document.getElementById('confirmPassword').value;
+            const phone = document.getElementById('phone').value;
+            
+            // Utiliser Firebase Auth pour l'inscription
+            (async () => {
+                try {
+                    // Attendre que Firebase soit chargé
+                    if (!window.firebase) {
+                        throw new Error('Firebase n\'est pas encore chargé');
+                    }
+                    
+                    const { createUserWithEmailAndPassword, auth } = window.firebase;
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, passwordValue);
+                    
+                    // Inscription Firebase réussie
+                    console.log('✅ Inscription Firebase réussie:', userCredential.user.uid);
+                    
+                    // Envoyer les données au serveur pour créer l'utilisateur dans Firestore
+                    const response = await fetch('/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(passwordValue)}&confirmPassword=${encodeURIComponent(confirmPasswordValue)}&phone=${encodeURIComponent(phone)}`
+                    });
+                    console.log('🔴 Response:', response);
+                    
+                    if (response.ok) {
+                        // Succès
+                        successMessage.style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                    } else {
+                        // Erreur serveur
+                        errorMessage.textContent = 'Erreur lors de la création du profil utilisateur';
+                        errorMessage.style.display = 'block';
+                        console.log('Erreur serveur:', response.json());
+                        
+                        //On supprime le user de Firebase
+                        await auth.currentUser.delete();
+                        console.log('User supprimé de Firebase');
+                        
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Erreur d\'inscription Firebase:', error);
+                    let errorMessageText = 'Erreur lors de l\'inscription';
+                    
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessageText = 'Cet email est déjà utilisé par un autre compte';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessageText = 'Email invalide';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessageText = 'Le mot de passe est trop faible. Il doit contenir au moins 6 caractères';
+                            break;
+                        case 'auth/operation-not-allowed':
+                            errorMessageText = 'L\'inscription par email/mot de passe n\'est pas activée';
+                            break;
+                        default:
+                            errorMessageText = 'Erreur lors de l\'inscription: ' + error.message;
+                    }
+                    
+                    errorMessage.textContent = errorMessageText;
+                    errorMessage.style.display = 'block';
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Créer mon compte';
+                    submitBtn.style.opacity = '1';
+                }
+            })();
+        });
+
+        // Form validation
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.hasAttribute('required') && !this.value) {
+                    this.classList.add('error');
+                } else {
+                    this.classList.remove('error');
+                }
+            });
+
+            input.addEventListener('input', function() {
+                this.classList.remove('error');
+            });
+        });
+
+        // Email validation
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email && !emailRegex.test(email)) {
+                this.classList.add('error');
+            } else {
+                this.classList.remove('error');
+            }
+        });
+    </script>
+</body>
+</html>

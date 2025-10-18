@@ -42,6 +42,24 @@
                 <div class="section" id="proprietaireActivities">
                     <!-- Données générées par JavaScript -->
                 </div>
+
+                <!-- Message de mise à niveau pour les rapports avancés -->
+                <% if (pagePermissions && !pagePermissions.viewAdvancedStats?.allowed) { %>
+                    <div class="upgrade-banner">
+                        <div class="banner-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="banner-content">
+                            <h4>Rapports avancés non disponibles</h4>
+                            <p>Accédez aux analyses détaillées et aux rapports avancés avec un plan supérieur.</p>
+                        </div>
+                        <div class="banner-actions">
+                            <a href="/parametres?tab=billing" class="btn btn-primary">
+                                <i class="fas fa-arrow-up"></i> Mettre à niveau
+                            </a>
+                        </div>
+                    </div>
+                <% } %>
     </div>
 
     <!-- Onglet Locataire -->
@@ -77,6 +95,74 @@
     // @ts-ignore
     // eslint-disable-next-line no-undef
     window.dashboardData = <%- JSON.stringify(dashboardData) %>;
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line no-undef
+    window.pagePermissions = <%- JSON.stringify(pagePermissions || {}) %>;
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line no-undef
+    window.userBillingPlan = <%- JSON.stringify(userBillingPlan || {}) %>;
+    
+    // Afficher une notification si l'utilisateur a des événements aujourd'hui
+    window.todayEventsCount = <%= todayEventsCount || 0 %>;
+    
+    if (window.todayEventsCount > 0) {
+        // Attendre que le DOM soit chargé
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                showEventsNotification(window.todayEventsCount);
+            }, 1000);
+        });
+    }
+    
+    function showEventsNotification(count) {
+        // Créer la notification
+        const notification = document.createElement('div');
+        notification.className = 'events-notification';
+        notification.innerHTML = `
+            <div class="events-notification-content">
+                <div class="events-notification-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="events-notification-text">
+                    <h4>Événements du jour</h4>
+                    <p>Vous avez <strong>${count}</strong> événement${count > 1 ? 's' : ''} prévu${count > 1 ? 's' : ''} aujourd'hui</p>
+                </div>
+                <div class="events-notification-actions">
+                    <a href="/calendrier" class="btn-view-calendar">
+                        <i class="fas fa-eye"></i>
+                        Voir le calendrier
+                    </a>
+                    <button class="btn-close-notification" onclick="closeEventsNotification()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animer l'apparition
+        setTimeout(function() {
+            notification.classList.add('show');
+        }, 100);
+        
+        // Fermer automatiquement après 10 secondes
+        setTimeout(function() {
+            closeEventsNotification();
+        }, 10000);
+    }
+    
+    function closeEventsNotification() {
+        const notification = document.querySelector('.events-notification');
+        if (notification) {
+            notification.classList.remove('show');
+            setTimeout(function() {
+                notification.remove();
+            }, 300);
+        }
+    }
 </script>
 
 <script src="/js/dashboard.js"></script>

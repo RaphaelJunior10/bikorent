@@ -3,6 +3,8 @@ const router = express.Router();
 const { firestoreUtils, COLLECTIONS } = require('../config/firebase');
 const { isFirebaseEnabled } = require('../config/environment');
 const dataService = require('../services/dataService');
+const billingService = require('../services/billingService');
+const { checkPagePermissions } = require('../middleware/billingMiddleware');
 
 // Données du calendrier de paiement (structure JSON facilement modifiable)
 const calendarData = {
@@ -313,10 +315,10 @@ function generatePaiementsData() {
 }
 
 // Page des paiements
-router.get('/', async (req, res) => {
+router.get('/', checkPagePermissions, async (req, res) => {
     // Récupérer l'utilisateur connecté depuis la session ou l'authentification
-    const connectedUserId = req.session?.userId || req.user?.id || 'U7h4HU5OfB9KTeY341NE'; // Fallback pour les tests
-    let ownerId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+    const connectedUserId = req.session.user.id;
+    let ownerId = req.session.user.id; // ID du propriétaire connecté
     
     // Initialiser les données par défaut
     let paiementsData = generatePaiementsData();
@@ -325,12 +327,14 @@ router.get('/', async (req, res) => {
     if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
         try {
             // Récupérer toutes les propriétés du propriétaire
-            const firebaseProperties = await firestoreUtils.query(COLLECTIONS.PROPERTIES);
-            /*const firebaseProperties = await firestoreUtils.query(COLLECTIONS.PROPERTIES, [
-                { type: 'where', field: 'ownerId', operator: '==', value: ownerId },
+            const firebasePropertiesAll = await firestoreUtils.query(COLLECTIONS.PROPERTIES, [
                 { type: 'where', field: 'isDeleted', operator: '!=', value: true }
-            ]);*/
+            ]);
+
+            //On recupere les proprietes appartenant au user connecte ainsi que les proprietes qu il loue
+            const firebaseProperties = firebasePropertiesAll.filter(p => (p.tenant && p.tenant.userId === connectedUserId) || (p.ownerId === connectedUserId));
             
+
             // Récupérer tous les utilisateurs (locataires)
             const firebaseUsers = await firestoreUtils.getAll(COLLECTIONS.USERS);
             
@@ -357,7 +361,7 @@ router.get('/', async (req, res) => {
                     const user = firebaseUsers.find(u => u.id === property.tenant.userId);
                     const entryDate = property.tenant.entryDate;
                     const dateNow = new Date();
-                    const monthDiff = fullMonthsBetween(new Date(entryDate), dateNow); //tien compte de la difference des annees
+                    const monthDiff = fullMonthsBetween(new Date(entryDate), dateNow) - 1; //tien compte de la difference des annees
                     //if (user && user.type === 'tenant') {
                         console.log(`💳 Traitement des paiements pour: ${user.profile.firstName} ${user.profile.lastName}`);
                         
@@ -501,15 +505,21 @@ router.get('/', async (req, res) => {
         console.log('🔄 Firebase désactivé ou non initialisé - utilisation des données statiques');
     }
     
+    // Récupérer les permissions de facturation
+    const userBillingPlan = await billingService.getUserBillingPlan(req.session.user.id);
+    const pagePermissions = req.pagePermissions || {};
+    
     res.render('paiements', {
         title: 'Paiements - BikoRent',
         pageTitle: 'Paiements',
         currentPage: 'paiements',
         user: {
-            name: 'Admin',
-            role: 'Propriétaire'
+            name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Admin',
+            role: req.session.user ? req.session.user.role : 'Propriétaire'
         },
-        paiementsData: paiementsData
+        paiementsData: paiementsData,
+        userBillingPlan: userBillingPlan,
+        pagePermissions: pagePermissions
     });
 });
 
@@ -627,7 +637,7 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                                 return p.userId === tenant.id && 
                                     p.propertyId === property.id &&
                                     paymentDate.getMonth() === date.getMonth() && 
-                                    paymentDate.getFullYear() === date.getFullYear();
+                                    paymentDate.getFullYear() === date.getFullYear() 
                             });
 
                                 //montPaymentList est un tableau des paiements du mois en cours de l'utilisateur, on considere qu un user peut faire plusieurs paiements par mois si il le souhaite
@@ -644,6 +654,11 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                                 payed += paidPlus > 0 ? paidPlus : 0; //Le surplus entre le montant payé et le loyer mensuel, sera utilisé comme loyer des mois en retard ou a venir
                                 lastMonthPayment = monthPaymentList[monthPaymentList.length - 1];
                                 paidUsed = property.monthlyRent;
+                                if(montant < property.monthlyRent){
+                                    console.log('montant < property.monthlyRent');
+                                    paidUsed = montant;
+                                    monthPayment.status = 'partiel';
+                                }
                             }else {
                                 //Ici, le paiement n'a pas été effectué pour le mois en cours, on se sert du surplus pour le/les mois précédent en retard 
                                     if(payed > property.monthlyRent){
@@ -659,19 +674,24 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                             
                             tenantPayments.push({
                                 mois: monthYear,
-                                statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : 'en-retard') : 'en-retard',
+                                statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : monthPayment.status === 'partiel' ? 'partiel' : 'en-retard') : 'en-retard',
                                 montant: monthPayment ? monthPayment.amount || 0 : property.monthlyRent || 0,
                                 paidUsed: paidUsed
                             });
                         }
                     }
-
+                    //console.log('tenantPayments', tenantPayments);
+                    
                         //On calcule le montant réellement utilisé pour le loyer
                     const paidUsedAll = tenantPayments.map(p => p.paidUsed).reduce((a, b) => a + b, 0);
                     //On calcule le montant total des paiements effectués
-                    const amountAll = tenantPayments.filter(p => p.statut == 'payé').map(p => p.montant).reduce((a, b) => a + b, 0);
+                    const amountAll = tenantPayments.filter(p => p.statut == 'payé' || p.statut == 'partiel').map(p => p.montant).reduce((a, b) => a + b, 0);
                     //On calcule le nombre de mois en retard ou a venir dont le surplus peut couvrir le loyer
                     let nb = Math.floor((amountAll - paidUsedAll) / property.monthlyRent);
+                    //console.log('nb', nb);
+                    //console.log('amountAll', amountAll);
+                    //console.log('paidUsedAll', paidUsedAll);
+                    
                     
                     if(nb > 0){
                         //On parcourt le tableau dans le sens inverse pour marquer dabord les mois les plus anciens qui sont en retard comme payés
@@ -683,6 +703,9 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                             if(payment.statut == 'en-retard') {
                                 tenantPayments[i].statut = 'completé';
                                 tenantPayments[i].montant = 0;
+                                nb--;
+                            }else if(payment.statut == 'partiel') {
+                                tenantPayments[i].statut = 'completé';
                                 nb--;
                             }
                         }
@@ -748,6 +771,10 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                             payed += paidPlus > 0 ? paidPlus : 0; //Le surplus entre le montant payé et le loyer mensuel, sera utilisé comme loyer des mois en retard ou a venir
                             lastMonthPayment = monthPaymentList[monthPaymentList.length - 1];
                             paidUsed = userProperty.monthlyRent;
+                            if(montant < userProperty.monthlyRent){
+                                paidUsed = montant;
+                                monthPayment.status = 'partiel';
+                            }
                         }else {
                             //Ici, le paiement n'a pas été effectué pour le mois en cours, on se sert du surplus pour le/les mois précédent en retard 
                                 if(payed > userProperty.monthlyRent){
@@ -763,7 +790,7 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                         
                         userTenantPayments.push({
                             mois: monthYear,
-                            statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : 'en-retard') : 'en-retard',
+                            statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : monthPayment.status === 'partiel' ? 'partiel' : 'en-retard') : 'en-retard',
                             montant: monthPayment ? monthPayment.amount || 0 : userProperty.monthlyRent || 0,
                             paidUsed: paidUsed
                         });
@@ -772,7 +799,7 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                 //On calcule le montant réellement utilisé pour le loyer
                 const paidUsedAll = userTenantPayments.map(p => p.paidUsed).reduce((a, b) => a + b, 0);
                 //On calcule le montant total des paiements effectués
-                const amountAll = userTenantPayments.filter(p => p.statut == 'payé').map(p => p.montant).reduce((a, b) => a + b, 0);
+                const amountAll = userTenantPayments.filter(p => p.statut == 'payé' || p.statut == 'partiel').map(p => p.montant).reduce((a, b) => a + b, 0);
                 //On calcule le nombre de mois en retard ou a venir dont le surplus peut couvrir le loyer
                 let nb = Math.floor((amountAll - paidUsedAll) / userProperty.monthlyRent);
                 
@@ -786,6 +813,9 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                         if(payment.statut == 'en-retard') {
                             userTenantPayments[i].statut = 'completé';
                             userTenantPayments[i].montant = 0;
+                            nb--;
+                        }else if(payment.statut == 'partiel') {
+                            userTenantPayments[i].statut = 'completé';
                             nb--;
                         }
                     }
@@ -977,7 +1007,7 @@ function generateMoisCalendrier(paiements, propriete, entryDate) {
 router.get('/paiement', async (req, res) => {
     try {
         // Récupérer l'utilisateur connecté
-        const connectedUserId = req.session?.userId || req.user?.id || 'U7h4HU5OfB9KTeY341NE';
+        const connectedUserId = req.session.user.id;
         
         // Récupérer les données nécessaires depuis Firebase
         let userProperties = [];
@@ -1013,14 +1043,47 @@ router.get('/paiement', async (req, res) => {
             }
         }
         
+        // Récupérer les informations complètes de l'utilisateur
+        let userInfo = {
+            name: 'Utilisateur',
+            email: 'email@example.com',
+            role: 'Locataire'
+        };
+        
+        try {
+            const userData = await dataService.getUser(connectedUserId);
+            console.log('🔍 User data retrieved from dataService:', userData);
+            
+            if (userData) {
+                console.log('🔍 User data firstName:', userData.firstName);
+                console.log('🔍 User data lastName:', userData.lastName);
+                console.log('🔍 User data name:', userData.name);
+                console.log('🔍 User data email:', userData.email);
+                
+                if (userData.firstName && userData.lastName) {
+                    userInfo.name = `${userData.firstName} ${userData.lastName}`;
+                    console.log('✅ Using firstName + lastName:', userInfo.name);
+                } else if (userData.name) {
+                    userInfo.name = userData.name;
+                    console.log('✅ Using name:', userInfo.name);
+                }
+                if (userData.email) {
+                    userInfo.email = userData.email;
+                }
+                if (userData.role) {
+                    userInfo.role = userData.role;
+                }
+            }
+            console.log('🔍 Final userInfo:', userInfo);
+        } catch (error) {
+            console.error('❌ Erreur lors de la récupération des informations utilisateur:', error);
+        }
+        
         res.render('paiement', {
             title: 'Effectuer un Paiement - BikoRent',
             pageTitle: 'Effectuer un Paiement',
             currentPage: 'paiement',
-            user: {
-                name: 'Locataire',
-                role: 'Locataire'
-            },
+            user: userInfo,
             userProperties: userProperties,
             userDebts: userDebts
         });
@@ -1074,26 +1137,44 @@ router.post('/process-payment', async (req, res) => {
         console.log('🔄 Traitement d\'un nouveau paiement...', req.body);
         
         // Récupérer l'utilisateur connecté
-        const connectedUserId = req.session?.userId || req.user?.id || 'U7h4HU5OfB9KTeY341NE';
+        const connectedUserId = req.session.user.id;
         
         // Valider les données reçues
         const {
             propertyId,
             propertyName,
-            paymentMethod,
+            method,
             monthsToPay,
             monthlyRent,
             totalAmount,
             serviceFees,
             finalTotal,
-            timestamp
+            timestamp,
+            mobidycDetails
         } = req.body;
+        console.log('req.body', req.body);
+        
+        
         
         // Validation des champs obligatoires
-        if (!propertyId || !paymentMethod || !monthsToPay || !totalAmount) {
+        if (!propertyId || !method || !monthsToPay || !totalAmount) {
             return res.status(400).json({
                 success: false,
                 message: 'Données de paiement incomplètes'
+            });
+        }
+
+        if(method === 'mobidyc'){
+            if(!mobidycDetails.provider || !mobidycDetails.phoneNumber){
+                return res.status(400).json({
+                    success: false,
+                    message: 'Provider ou numéro de téléphone non trouvés, veuillez contacter l\'administrateur'
+                });
+            }
+        }else{
+            return res.status(400).json({
+                success: false,
+                message: 'Méthode de paiement non supportée, veuillez contacter l\'administrateur'
             });
         }
         
@@ -1153,7 +1234,25 @@ router.post('/process-payment', async (req, res) => {
                         message: 'Vous n\'êtes pas autorisé à effectuer un paiement pour cette propriété'
                     });
                 }
+
+                const trueAmount = property.monthlyRent * monthsToPay;
+                if(trueAmount > totalAmount){
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Le montant payé est incorrect, veuillez contacter l\'administrateur'
+                    });
+                }
+
+                const owner = await dataService.getUser(property.ownerId);
+                if(!owner.mobidyc){
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Propriétaire non trouvé, veuillez contacter l\'administrateur'
+                    });
+                }
                 
+                const result = await dataService.singlePayement(`TXN_${Date.now()}`, owner.mobidyc.serviceId, totalAmount, mobidycDetails.phoneNumber, owner.mobidyc.serviceApikey);
+    
                 // Créer le paiement en base de données
                 const paymentData = await createPaymentInDatabase({
                     propertyId,
@@ -1161,14 +1260,40 @@ router.post('/process-payment', async (req, res) => {
                     method,
                     monthsToPay,
                     monthlyRent,
-                    totalAmount,
+                    totalAmount: result.montant,
                     serviceFees,
                     finalTotal,
                     connectedUserId,
                     paymentDetails: req.body
                 });
                 
+                const user = await dataService.getUser(connectedUserId);
+                const email = user.profile.email;
+
+                if(result.montant < totalAmount){
+                    await dataService.sendMail(email, 'Paiement partiel', '/paiements', 'Votre paiement pour le loyer de la propriété ' + property.name + ' d\'une somme de ' + totalAmount + ' FCFA n\'a pas été effectué en entier, le montant payé est de ' + result.montant + ' FCFA. Veuillez compléter le paiement en ligne sur votre compte ou contacter l\'administrateur pour compléter le paiement.');
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Le paiement n\'a pas été effectué en entier, veuillez contacter l\'administrateur'
+                    });
+                }
+
+                //On envoie un email de confirmation de paiement
+                //await dataService.sendMail(email, 'Paiement traité avec succès', '/paiements', 'Votre paiement pour le loyer de la propriété ' + property.name + ' d\'une somme de ' + result.montant + ' FCFA a été traité avec succès');
+
+                
                 console.log('✅ Paiement créé avec succès:', paymentData);
+
+                //ON verifi si user_automations[userId].automations.accountant-payment-alert.isActive est true
+                const userAutomations = await dataService.getUserAutomations(connectedUserId);
+                if (userAutomations.automations['accountant-payment-alert'].isActive) {
+                    
+                    //On envoi un email de confirmation de paiement
+                    const msg = 'Un nouveau paiement a été effectué pour la propriété ' + propertyName + '. Connectez-vous à votre compte pour voir les détails.';
+                    const msgTenant = 'Vous venez d\'effectuer un paiement pour la propriété ' + propertyName + '. Connectez-vous à votre compte pour voir les détails.';
+                    await sendEmail(owner.profile.email, 'Nouveau paiement','/paiements', msg);
+                    await sendEmail(user.profile.email, 'Nouveau paiement','/paiements', msgTenant);
+                }
                 
                 res.json({
                     success: true,
@@ -1220,29 +1345,18 @@ async function createPaymentInDatabase(paymentInfo) {
         
         // Créer l'objet paiement
         const paymentData = {
-            userId: paymentInfo.tenantId || paymentInfo.recordedBy, // Utiliser l'ID du locataire ou de l'utilisateur qui enregistre
+            userId: paymentInfo.connectedUserId,
             propertyId: paymentInfo.propertyId,
-            amount: paymentInfo.amount,
-            monthsPaid: paymentInfo.months,
+            amount: paymentInfo.totalAmount,
+            monthsPaid: paymentInfo.monthsToPay,
             method: paymentInfo.method,
-            status: paymentInfo.status || 'paid',
-            date: paymentInfo.date,
+            status: 'paid',
+            date: new Date().toISOString(),
             reference: generatePaymentReference(paymentInfo.method),
-            description: paymentInfo.commentaire || 'Paiement en espèces',
-            recordedBy: paymentInfo.recordedBy,
-            userRole: paymentInfo.userRole,
+            description: 'Paiement via '+paymentInfo.method+' pour '+paymentInfo.propertyName,
             createdAt: new Date(),
             updatedAt: new Date()
         };
-        
-        // Ajouter les détails spécifiques pour le paiement en espèces
-        if (paymentInfo.method === 'Espèces') {
-            paymentData.cashDetails = {
-                recordedBy: paymentInfo.recordedBy,
-                userRole: paymentInfo.userRole,
-                comment: paymentInfo.commentaire || ''
-            };
-        }
         
         // Sauvegarder en base de données
         console.log('💾 Tentative de sauvegarde en base...', {
@@ -1250,13 +1364,15 @@ async function createPaymentInDatabase(paymentInfo) {
             paymentId: paymentId,
             dataKeys: Object.keys(paymentData)
         });
+        console.log('paymentData', paymentData);
+        
         
         const savedPayment = await firestoreUtils.add(COLLECTIONS.PAYMENTS, paymentData, paymentId);
         
         console.log('✅ Paiement sauvegardé en base:', savedPayment);
         
         // Simuler le traitement du paiement (dans un vrai système, ceci serait fait par l'API de paiement)
-        setTimeout(async () => {
+        //setTimeout(async () => {
             try {
                 // Marquer le paiement comme complété
                 await firestoreUtils.update(COLLECTIONS.PAYMENTS, paymentId, {
@@ -1268,7 +1384,7 @@ async function createPaymentInDatabase(paymentInfo) {
             } catch (error) {
                 console.error('❌ Erreur lors de la finalisation du paiement:', error);
             }
-        }, 5000); // Simuler un délai de traitement de 5 secondes
+        //}, 5000); // Simuler un délai de traitement de 5 secondes
         
         return {
             success: true,
@@ -1294,7 +1410,14 @@ function generatePaymentReference(paymentMethod) {
 // Route pour traiter un paiement en espèces
 router.post('/process-especes-payment', async (req, res) => {
     try {
-        const connectedUserId = req.session?.userId || req.user?.id || 'U7h4HU5OfB9KTeY341NE';
+        const connectedUserId = req.session.user.id;
+        //On verifi que le user n est pas null
+        if (!connectedUserId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Utilisateur non connecté' 
+            });
+        }
         console.log('🔍 [DEBUG] Processing cash payment for user:', connectedUserId);
         
         const { 
@@ -1302,11 +1425,10 @@ router.post('/process-especes-payment', async (req, res) => {
             months, 
             date, 
             commentaire,
-            method,
-            isExternalPayment,
-            data
         } = req.body;
-        
+        const method = 'Espèces';
+        const isExternalPayment = false;
+        const data = {};
         console.log('🔍 [DEBUG] Cash payment data received:', {
             propertyId,
             months,
@@ -1378,17 +1500,15 @@ router.post('/process-especes-payment', async (req, res) => {
         const paymentInfo = {
             propertyId,
             propertyName: property.name,
-            tenantId: property.tenant ? property.tenant.userId : null,
+            connectedUserId: property.tenant ? property.tenant.userId : null,
             tenantName: tenantName,
-            amount: totalAmount,
-            months: months,
+            totalAmount: totalAmount,
+            monthsToPay: months,
             method: method || 'Espèces',
             date: date,
             data: data,
             commentaire: commentaire || '',
             status: 'paid',
-            recordedBy: connectedUserId,
-            userRole: isOwner ? 'owner' : 'tenant',
             externalDetails: isExternalPayment ? {
                 isExternal: true,
                 paymentDate: new Date().toISOString(),
@@ -1402,6 +1522,18 @@ router.post('/process-especes-payment', async (req, res) => {
         const paymentResult = await createPaymentInDatabase(paymentInfo);
         
         if (paymentResult.success) {
+            //ON verifi si user_automations[userId].automations.accountant-payment-alert.isActive est true
+            const userAutomations = await dataService.getUserAutomations(connectedUserId);
+            if (userAutomations.automations['accountant-payment-alert'].isActive) {
+                //On recupere l email du user
+                const user = await dataService.getUser(connectedUserId);
+                const tenant = await dataService.getUser(property.tenant?.userId);
+                //On envoi un email de confirmation de paiement
+                const msg = 'Vous venez d\'ajouter un paiement en espèces pour la propriété ' + property.name + '. Connectez-vous à votre compte pour voir les détails.';
+                await sendEmail(user.profile.email, 'Nouveau paiement','/paiements', msg);
+                const msgTenant = 'Mr/Mme ' + user.profile.firstName + ' ' + user.profile.lastName + ' a enregistré en votre nom, un paiement en espèces pour la propriété ' + property.name + '. Connectez-vous à votre compte pour voir les détails.';
+                await sendEmail(tenant.profile.email, 'Nouveau paiement','/paiements', msgTenant);
+            }
             res.json({ 
                 success: true, 
                 message: 'Paiement en espèces enregistré avec succès',
@@ -1426,7 +1558,7 @@ router.post('/process-especes-payment', async (req, res) => {
 // Route pour récupérer les propriétés disponibles pour le paiement en espèces
 router.get('/available-properties', async (req, res) => {
     try {
-        const connectedUserId = req.session?.userId || req.user?.id || 'U7h4HU5OfB9KTeY341NE';
+        const connectedUserId = req.session.user.id;
         
         if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
             // Récupérer toutes les propriétés
@@ -1439,11 +1571,23 @@ router.get('/available-properties', async (req, res) => {
             
             // Filtrer les propriétés selon le rôle de l'utilisateur
             let availableProperties = [];
+            let tenantsObject = {};
             
             // Vérifier si l'utilisateur est propriétaire
             const ownerProperties = allProperties.filter(property => property.ownerId === connectedUserId);
             console.log(`🔍 [DEBUG] Propriétés où l'utilisateur est propriétaire: ${ownerProperties.length}`);
-            
+            //On recupere les locataires de ces propriétés
+            const tenantIds = ownerProperties.filter(property => property.tenant).map(property => property.tenant.userId);
+            //On recupere les users
+            const tenants = await dataService.getUsersByIds(tenantIds);
+            //On les ranges dans un objet: userId: firstName, lastName
+            tenantsObject = tenants.reduce((acc, tenant) => {
+                acc[tenant.id] = {
+                    firstName: tenant.profile.firstName,
+                    lastName: tenant.profile.lastName
+                };
+                return acc;
+            }, {});
             if (ownerProperties.length > 0) {
                 // L'utilisateur est propriétaire
                 availableProperties = ownerProperties
@@ -1456,7 +1600,7 @@ router.get('/available-properties', async (req, res) => {
                         ownerId: property.ownerId
                     }));
                 console.log(`✅ [DEBUG] Propriétés disponibles pour le propriétaire: ${availableProperties.length}`);
-            } else {
+            } /*else {
                 // Vérifier si l'utilisateur est locataire
                 const tenantProperties = allProperties.filter(property => 
                     property.tenant && property.tenant.userId === connectedUserId
@@ -1474,11 +1618,12 @@ router.get('/available-properties', async (req, res) => {
                     }));
                     console.log(`✅ [DEBUG] Propriétés du locataire: ${availableProperties.length}`);
                 }
-            }
+            }*/
             
             res.json({
                 success: true,
                 properties: availableProperties,
+                tenantsObject: tenantsObject,
                 userRole: ownerProperties.length > 0 ? 'owner' : 'tenant'
             });
         } else {
@@ -1524,7 +1669,7 @@ router.get('/available-properties', async (req, res) => {
 // Route de debug pour vérifier les données
 router.get('/debug-data', async (req, res) => {
     try {
-        const connectedUserId = req.session?.userId || req.user?.id || 'U7h4HU5OfB9KTeY341NE';
+        const connectedUserId = req.session.user.id;
         
         if (isFirebaseEnabled() && firestoreUtils.isInitialized()) {
             const properties = await firestoreUtils.query(COLLECTIONS.PROPERTIES);
@@ -1633,6 +1778,20 @@ router.get('/paiement-externe/:propertyId', async (req, res) => {
             isPaymentLink: propertyDoc.isPaymentLink
         };
 
+        const tenant = await dataService.getUser(propertyDoc.tenant?.userId);
+        if(!tenant){
+            return res.render('paiementExterne', {
+                title: 'Paiement Externe - BikoRent',
+                property: null,
+                error: 'Locataire non trouvé',
+                layout: false
+            });
+        }
+        property.tenant = {
+            name: tenant.profile.firstName + ' ' + tenant.profile.lastName,
+            email: tenant.profile.email
+        };
+
         console.log('✅ [EXTERNAL PAYMENT] Propriété trouvée:', property);
 
         // Récupérer les paiements pour cette propriété
@@ -1672,19 +1831,43 @@ router.get('/paiement-externe/:propertyId', async (req, res) => {
 // Route pour traiter les paiements externes
 router.post('/paiement-externe/:propertyId', async (req, res) => {
     try {
-        const { propertyId } = req.params;
-        const { months, date, commentaire, method } = req.body;
-        
+        //const { propertyId } = req.params;
+        const { propertyId, months, date, method, commentaire, isExternalPayment, data } = req.body;
+       
         console.log('💳 [EXTERNAL PAYMENT] Traitement paiement externe:', {
             propertyId,
             months,
             date,
+            method,
             commentaire,
-            method
+            isExternalPayment,
+            data
         });
 
+        if(months <= 0){
+            return res.status(400).json({
+                success: false,
+                message: 'Le nombre de mois doit être supérieur à 0'
+            });
+        }
+
+        if(method === 'mobidyc'){
+            if(!data.provider || !data.phoneNumber){
+                return res.status(400).json({
+                    success: false,
+                    message: 'Provider ou numéro de téléphone non trouvés, veuillez contacter l\'administrateur'
+                });
+            }
+        }else{
+            return res.status(400).json({
+                success: false,
+                message: 'Méthode de paiement non supportée, veuillez contacter l\'administrateur'
+            });
+        }
+        
         // Récupérer la propriété
-        const propertyDoc = await firestoreUtils.getDocument('proprietes', propertyId);
+
+        const propertyDoc = await dataService.getPropertyById(propertyId);
         
         if (!propertyDoc) {
             return res.json({
@@ -1695,11 +1878,22 @@ router.post('/paiement-externe/:propertyId', async (req, res) => {
 
         const amount = propertyDoc.monthlyRent * parseInt(months);
 
+        const owner = await dataService.getUser(propertyDoc.ownerId);
+        if(!owner.mobidyc){
+            return res.status(400).json({
+                success: false,
+                message: 'Propriétaire non trouvé, veuillez contacter l\'administrateur'
+            });
+        }
+        
+        const result = await dataService.singlePayement(`TXN_${Date.now()}`, owner.mobidyc.serviceId, amount, data.phoneNumber, owner.mobidyc.serviceApikey);
+
+
         // Créer le paiement
         const paymentData = {
             userId: propertyDoc.tenant?.userId || 'external',
             propertyId: propertyId,
-            amount: amount,
+            amount: result.montant,
             monthsPaid: parseInt(months),
             method: method || 'Virement',
             status: 'paid',
@@ -1717,9 +1911,31 @@ router.post('/paiement-externe/:propertyId', async (req, res) => {
         };
         
         // Sauvegarder en base
-        const paymentId = await firestoreUtils.addDocument('paiements', paymentData);
+        const paymentId = await firestoreUtils.add(COLLECTIONS.PAYMENTS, paymentData);
         
         console.log('✅ [EXTERNAL PAYMENT] Paiement créé:', paymentId);
+        const tenant = await dataService.getUser(propertyDoc.tenant?.userId);
+
+        if(result.montant < amount){
+            await dataService.sendMail(tenant.profile.email, 'Paiement partiel', '/paiements', 'Votre paiement pour le loyer de la propriété ' + propertyDoc.name + ' d\'une somme de ' + amount + ' FCFA n\'a pas été effectué en entier, le montant payé est de ' + result.montant + ' FCFA. Veuillez compléter le paiement en ligne sur votre compte ou contacter l\'administrateur pour compléter le paiement');
+            return res.status(400).json({
+                success: false,
+                message: 'Le paiement n\'a pas été effectué en entier, veuillez contacter l\'administrateur'
+            });
+        }
+
+        //ON verifi si user_automations[userId].automations.accountant-payment-alert.isActive est true
+        const userAutomations = await dataService.getUserAutomations(propertyDoc.ownerId);
+        if (userAutomations.automations['accountant-payment-alert'].isActive) {
+            //On recupere l email du user
+            const owner = await dataService.getUser(propertyDoc.ownerId);
+            
+            //On envoi un email de confirmation de paiement
+            const msg = 'Un paiement vient d\'être effectué pour la propriété ' + propertyDoc.name + '. Connectez-vous à votre compte pour voir les détails.';
+            const msgTenant = 'Un paiement vient d\'être effectué pour la propriété ' + propertyDoc.name + ' dont vous êtes locataire. Connectez-vous à votre compte pour voir les détails.';
+            await sendEmail(owner.profile.email, 'Nouveau paiement','/paiements', msg);
+            await sendEmail(tenant.profile.email, 'Nouveau paiement','/paiements', msgTenant);
+        }
 
         res.json({
             success: true,

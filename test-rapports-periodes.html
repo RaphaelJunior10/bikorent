@@ -407,3 +407,43 @@
     </script>
 </body>
 </html>
+
+<!--
+
+Voic les fonctionnalite pour les differents plan de facturation:
+- Plan Basique:
+    - Nombre maximal de propriétés: 3
+    - Notifications: Nouveau paiement
+    - Support prioritaire: Non
+    - Rapports avancés: Non
+    - Integrations API: Non
+    - Double sécurité: Non
+    - Prix: 0 xaf/propriété/mois
+- Plan Standard:
+    - Nombre maximal de propriétés: 10
+    - Notifications: Nouveau paiement, nouvelle location, retard de paiement
+    - Support prioritaire: Non
+    - Rapports avancés: Général
+    - Integrations API: Non
+    - Double sécurité: Non
+    - Prix: 1000 xaf/propriété/mois
+- Plan Premium:
+    - Nombre maximal de propriétés: 15
+    - Notifications: Nouveau paiement, nouvelle location, retard de paiement
+    - Support prioritaire: Oui
+    - Rapports avancés: Général, propriétés
+    - Integrations API: Whatsapp Business
+    - Double sécurité: Oui
+    - Prix: 2500 xaf/propriété/mois
+- Plan Enterprise:
+    - Nombre maximal de propriétés: Illimité
+    - Notifications: Nouveau paiement, nouvelle location, retard de paiement
+    - Support prioritaire: Oui
+    - Rapports avancés: Général, propriétés
+    - Integrations API: Whatsapp Business, Google calendar, Quickbooks, Zapier
+    - Double sécurité: Oui
+    - Prix: 5000 xaf/propriété/mois
+-->
+<!--
+maintenant gere le traitement des pages connexion et inscriptions, si le user se connecte ou s inscrit apres verification et traitement, tu le redirige vers la page home en creant une session pour lui, les boutons 'connexion et inscription' sont alors remplace par une ucone user qui le redirige vers la page dashboard. en inscrivant un user, tu l inscrit dans authentication et tu l ajoute dans user avec tous les parametres par defaut, tu recupere son id utilisateur dans authentication cest ce que tu mettra comme id quand tu crera une entre pour lui dans la collection users.
+-->

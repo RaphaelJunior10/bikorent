@@ -1,0 +1,100 @@
+<!-- Message de mise à niveau de plan -->
+<div class="upgrade-message" data-feature="<%= feature || 'general' %>" data-current-plan="<%= currentPlan || 'basique' %>">
+    <div class="upgrade-content">
+        <div class="upgrade-icon">
+            <i class="fas fa-crown"></i>
+        </div>
+        <div class="upgrade-text">
+            <h3><%= title || 'Fonctionnalité non disponible' %></h3>
+            <p><%= message || 'Cette fonctionnalité n\'est pas disponible avec votre plan actuel.' %></p>
+            <% if (suggestedPlan) { %>
+                <p class="suggested-plan">
+                    <strong>Plan recommandé :</strong> <%= suggestedPlan %>
+                </p>
+            <% } %>
+            <% if (featureDescription) { %>
+                <p class="feature-description">
+                    <%= featureDescription %>
+                </p>
+            <% } %>
+        </div>
+        <div class="upgrade-actions">
+            <a href="/parametres?tab=billing" class="btn btn-primary">
+                <i class="fas fa-arrow-up"></i> Mettre à niveau
+            </a>
+            <button class="btn btn-secondary" onclick="closeUpgradeMessage()">
+                <i class="fas fa-times"></i> Fermer
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fonction pour fermer le message de mise à niveau
+function closeUpgradeMessage() {
+    const upgradeMessage = document.querySelector('.upgrade-message');
+    if (upgradeMessage) {
+        upgradeMessage.style.display = 'none';
+    }
+}
+
+// Fonction pour afficher un message de mise à niveau
+function showUpgradeMessage(data) {
+    // Supprimer les messages existants
+    const existingMessages = document.querySelectorAll('.upgrade-message');
+    existingMessages.forEach(msg => msg.remove());
+    
+    // Créer le nouveau message
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'upgrade-message';
+    messageDiv.innerHTML = `
+        <div class="upgrade-content">
+            <div class="upgrade-icon">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="upgrade-text">
+                <h3>${data.title || 'Fonctionnalité non disponible'}</h3>
+                <p>${data.message || 'Cette fonctionnalité n\'est pas disponible avec votre plan actuel.'}</p>
+                ${data.suggestedPlan ? `<p class="suggested-plan"><strong>Plan recommandé :</strong> ${data.suggestedPlan}</p>` : ''}
+                ${data.featureDescription ? `<p class="feature-description">${data.featureDescription}</p>` : ''}
+            </div>
+            <div class="upgrade-actions">
+                <a href="/parametres?tab=billing" class="btn btn-primary">
+                    <i class="fas fa-arrow-up"></i> Mettre à niveau
+                </a>
+                <button class="btn btn-secondary" onclick="closeUpgradeMessage()">
+                    <i class="fas fa-times"></i> Fermer
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Ajouter au DOM
+    document.body.appendChild(messageDiv);
+    
+    // Animation d'apparition
+    setTimeout(() => {
+        messageDiv.classList.add('show');
+    }, 100);
+}
+
+// Gestion des erreurs AJAX avec messages de mise à niveau
+document.addEventListener('DOMContentLoaded', function() {
+    // Intercepter les réponses AJAX pour les messages de mise à niveau
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        return originalFetch.apply(this, args)
+            .then(response => {
+                if (response.status === 403) {
+                    return response.json().then(data => {
+                        if (data.upgradeRequired && data.upgradeMessage) {
+                            showUpgradeMessage(data.upgradeMessage);
+                        }
+                        throw new Error(data.message || 'Accès refusé');
+                    });
+                }
+                return response;
+            });
+    };
+});
+</script>

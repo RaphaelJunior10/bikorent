@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Popup Simple</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        /* Styles pour le popup d'informations utilisateur */
+        .user-info-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .user-info-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .user-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .user-info-header h3 {
+            margin: 0;
+            color: #007bff;
+            font-size: 1.25rem;
+        }
+
+        .close-popup {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #666;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .close-popup:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .user-info-body {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .user-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #007bff, #1d4ed8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem auto;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .user-details {
+            text-align: left;
+        }
+
+        .user-name-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .user-name-section h4 {
+            margin: 0;
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .copy-name-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .copy-name-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .copy-name-btn:active {
+            transform: translateY(0);
+        }
+
+        .user-info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .user-info-item:hover {
+            background: #e9ecef;
+        }
+
+        .user-info-item i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+            color: #007bff;
+        }
+
+        .user-info-item .status-online {
+            color: #28a745;
+        }
+
+        .user-info-item span {
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .user-info-footer {
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+        }
+
+        .btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: #5a6268;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test du Popup d'Informations</h1>
+        <p>Ce test vérifie que le popup d'informations utilisateur fonctionne correctement.</p>
+        
+        <button class="test-button" onclick="showPopup()">
+            <i class="fas fa-info-circle"></i> Afficher le Popup
+        </button>
+        
+        <div id="status" style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+            Cliquez sur le bouton pour tester le popup
+        </div>
+    </div>
+
+    <!-- Popup d'informations utilisateur -->
+    <div id="userInfoPopup" class="user-info-popup" style="display: none;">
+        <div class="user-info-content">
+            <div class="user-info-header">
+                <h3>Informations utilisateur</h3>
+                <button class="close-popup" id="closeUserInfoPopup">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="user-info-body">
+                <div class="user-avatar-large">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name-section">
+                        <h4 id="popupUserName">Marie Dubois</h4>
+                        <button class="copy-name-btn" id="copyUserName" title="Copier le nom">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="user-info-item">
+                        <i class="fas fa-envelope"></i>
+                        <span id="popupUserEmail">marie.dubois@example.com</span>
+                    </div>
+                    <div class="user-info-item">
+                        <i class="fas fa-phone"></i>
+                        <span id="popupUserPhone">+33 1 23 45 67 89</span>
+                    </div>
+                    <div class="user-info-item">
+                        <i class="fas fa-building"></i>
+                        <span id="popupUserProperty">Appartement T3 - Paris 15ème</span>
+                    </div>
+                    <div class="user-info-item">
+                        <i class="fas fa-calendar"></i>
+                        <span id="popupUserJoinDate">Membre depuis janvier 2024</span>
+                    </div>
+                    <div class="user-info-item">
+                        <i class="fas fa-circle status-online"></i>
+                        <span>En ligne</span>
+                    </div>
+                </div>
+            </div>
+            <div class="user-info-footer">
+                <button class="btn btn-secondary" id="closeUserInfoPopup2">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPopup() {
+            const popup = document.getElementById('userInfoPopup');
+            if (popup) {
+                popup.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                document.getElementById('status').innerHTML = '<span style="color: green;">✅ Popup affiché avec succès !</span>';
+            } else {
+                document.getElementById('status').innerHTML = '<span style="color: red;">❌ Erreur : Popup non trouvé</span>';
+            }
+        }
+
+        function hidePopup() {
+            const popup = document.getElementById('userInfoPopup');
+            if (popup) {
+                popup.style.display = 'none';
+                document.body.style.overflow = '';
+                document.getElementById('status').innerHTML = 'Popup fermé';
+            }
+        }
+
+        function copyUserName() {
+            const userName = document.getElementById('popupUserName').textContent;
+            navigator.clipboard.writeText(userName).then(() => {
+                const copyBtn = document.getElementById('copyUserName');
+                const originalIcon = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalIcon;
+                    copyBtn.style.background = '';
+                }, 2000);
+                
+                document.getElementById('status').innerHTML = '<span style="color: green;">✅ Nom copié : ' + userName + '</span>';
+            }).catch(err => {
+                document.getElementById('status').innerHTML = '<span style="color: red;">❌ Erreur lors de la copie</span>';
+            });
+        }
+
+        // Gérer les événements
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#closeUserInfoPopup') || e.target.closest('#closeUserInfoPopup2')) {
+                hidePopup();
+            }
+            if (e.target.closest('#copyUserName')) {
+                copyUserName();
+            }
+            if (e.target.id === 'userInfoPopup') {
+                hidePopup();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -312,8 +312,8 @@ function testDataDisplay() {
     
     if (monthlyRevenue) {
         const revenue = properties.filter(p => p.status === 'rented').reduce((sum, p) => sum + p.rent, 0);
-        monthlyRevenue.textContent = `€${revenue}`;
-        console.log('Revenus mensuels forcés à: €', revenue);
+        monthlyRevenue.textContent = `FCFA ${revenue}`;
+        console.log('Revenus mensuels forcés à: FCFA ', revenue);
     }
     
     // Forcer l'affichage des cartes de propriétés
@@ -361,7 +361,7 @@ function testDataDisplay() {
                     </div>
                     <div class="property-rent">
                         <i class="fas fa-euro-sign"></i>
-                        <span>€${property.rent}/mois</span>
+                        <span>FCFA ${property.rent}/mois</span>
                     </div>
                     <div class="property-features">
                         ${property.features.slice(0, 3).map(feature => 
@@ -585,11 +585,12 @@ function setupEventListeners() {
         cancelPropertyBtn.addEventListener('click', closePropertyModal);
     }
 
-    // Fermer les modals en cliquant à l'extérieur
+    // Fermer les modals en cliquant à l'extérieur (sauf le modal d'ajout de propriété)
     window.addEventListener('click', function(e) {
-        if (e.target === propertyModal) {
-            closePropertyModal();
-        }
+        // Ne pas fermer le modal d'ajout de propriété en cliquant à l'extérieur
+        // if (e.target === propertyModal) {
+        //     closePropertyModal();
+        // }
         if (e.target === propertyDetailsModal) {
             closeDetailsModalHandler();
         }
@@ -659,7 +660,7 @@ function renderProperties() {
                 </div>
                 <div class="property-rent">
                     <i class="fas fa-euro-sign"></i>
-                    <span>€${property.rent}/mois</span>
+                    <span>FCFA ${property.rent}/mois</span>
                 </div>
                 <div class="property-features">
                     ${property.features.slice(0, 3).map(feature => 
@@ -859,7 +860,7 @@ function viewProperty(id) {
     document.getElementById('detailSurface').textContent = `${property.surface}m²`;
     document.getElementById('detailRooms').textContent = property.rooms;
     document.getElementById('detailBedrooms').textContent = property.bedrooms;
-    document.getElementById('detailRent').textContent = `€${property.rent}/mois`;
+    document.getElementById('detailRent').textContent = `FCFA ${property.rent}/mois`;
     document.getElementById('detailStatus').textContent = getStatusText(property.status);
     document.getElementById('detailAddress').textContent = `${property.address}, ${property.city} ${property.zipCode}`;
     document.getElementById('detailCoordinates').textContent = `${property.coordinates.lat}, ${property.coordinates.lng}`;
@@ -1102,7 +1103,7 @@ function updateStats() {
     const monthlyRevenue = activeProperties
         .filter(p => p.status === 'rented')
         .reduce((sum, p) => sum + p.rent, 0);
-    document.getElementById('monthlyRevenue').textContent = `€${monthlyRevenue}`;
+    document.getElementById('monthlyRevenue').textContent = `FCFA ${monthlyRevenue}`;
     console.log('Statistiques mises à jour');
 }
 
@@ -1120,15 +1121,53 @@ function handleFilter(e) {
 function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Ajouter une propriété';
     propertyForm.reset();
+    
+    // Réinitialiser l'image sélectionnée
+    selectedImageBase64 = null;
+    removeSelectedImage();
+    
+    // Empêcher le scroll de la page
+    document.body.classList.add('modal-open');
+    
     propertyModal.classList.add('show');
 }
 
 function closePropertyModal() {
     propertyModal.classList.remove('show');
+    
+    // Réinitialiser le formulaire et l'image sélectionnée
+    propertyForm.reset();
+    selectedImageBase64 = null;
+    removeSelectedImage();
+    
+    // Réinitialiser les boutons au cas où ils seraient désactivés
+    const saveBtn = document.getElementById('saveProperty');
+    const cancelBtn = document.getElementById('cancelProperty');
+    const closeBtn = document.getElementById('closeModal');
+    
+    if (saveBtn) {
+        saveBtn.innerHTML = 'Enregistrer';
+        saveBtn.disabled = false;
+    }
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+    }
+    if (closeBtn) {
+        closeBtn.disabled = false;
+    }
+    
+    // Restaurer le scroll de la page
+    document.body.classList.remove('modal-open');
 }
 
 function handlePropertySubmit(e) {
     e.preventDefault();
+    
+    // Validation : vérifier qu'au moins une image est sélectionnée
+    if (!selectedImageBase64) {
+        showNotification('Veuillez sélectionner au moins une image pour la propriété', 'error');
+        return;
+    }
     
     const formData = new FormData(propertyForm);
     console.log('propertyForm', propertyForm);
@@ -1157,14 +1196,27 @@ function handlePropertySubmit(e) {
         description: formData.get('propertyDescription'),
         features: formData.get('propertyFeatures').split(',').map(f => f.trim()).filter(f => f),
         isPaymentLink: formData.get('propertyPaymentLink') === 'on',
-        image: selectedImageBase64 || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
+        image: selectedImageBase64, // Utiliser seulement l'image sélectionnée
         createdAt: new Date(),
         updatedAt: new Date(),
         isDeleted: false,
     };
     
-    properties.push(newProperty);
-    renderProperties();
+    // Récupérer les boutons pour les désactiver
+    const saveBtn = document.getElementById('saveProperty');
+    const cancelBtn = document.getElementById('cancelProperty');
+    const closeBtn = document.getElementById('closeModal');
+    
+    // Sauvegarder le contenu original des boutons
+    const originalSaveContent = saveBtn.innerHTML;
+    const originalCancelDisabled = cancelBtn.disabled;
+    const originalCloseDisabled = closeBtn.disabled;
+    
+    // Afficher le loader et désactiver les boutons
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    closeBtn.disabled = true;
     
     // Envoyer la propriété au backend avec l'image base64
     axios.post('/proprietes/add', newProperty)
@@ -1175,14 +1227,27 @@ function handlePropertySubmit(e) {
             // Réinitialiser l'image sélectionnée
             selectedImageBase64 = null;
             removeSelectedImage();
+            
+            // Fermer le modal seulement si la requête réussit
+            closePropertyModal();
+            
+            // Recharger la page pour afficher la nouvelle propriété
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         })
         .catch(error => {
             console.error('Erreur lors de l\'ajout de la propriété:', error);
             showNotification('Une erreur est survenue lors de l\'ajout de la propriété', 'error');
+            // Ne pas fermer le modal en cas d'erreur
+        })
+        .finally(() => {
+            // Restaurer les boutons
+            saveBtn.innerHTML = originalSaveContent;
+            saveBtn.disabled = false;
+            cancelBtn.disabled = originalCancelDisabled;
+            closeBtn.disabled = originalCloseDisabled;
         });
-    
-    updateStats();
-    closePropertyModal();
 }
 
 function addProperty(newProperty) {
@@ -1515,7 +1580,7 @@ function addEditImage() {
                 propertyImages.push(newImage);
                 currentImageIndex = propertyImages.length - 1;
                 initEditImageSlider();
-                showNotification('Image ajoutée avec succès', 'success');
+                //showNotification('Image ajoutée avec succès', 'success');
             };
             reader.readAsDataURL(file);
         }
@@ -1742,7 +1807,7 @@ function generatePaymentLink(propertyId) {
             <div class="modal-body">
                 <div class="property-info">
                     <h4>${property.name}</h4>
-                    <p><i class="fas fa-euro-sign"></i> Loyer mensuel: €${property.rent}</p>
+                    <p><i class="fas fa-euro-sign"></i> Loyer mensuel: FCFA ${property.rent}</p>
                     <p><i class="fas fa-user"></i> Locataire: ${property.tenant || 'Non défini'}</p>
                 </div>
                 

@@ -298,12 +298,12 @@ function renderGridView() {
                 <div class="payment-info">
                     <div class="loyer">
                         <span class="label">Loyer:</span>
-                        <span class="amount">€${locataire.loyer}/mois</span>
+                        <span class="amount">FCFA ${locataire.loyer}/mois</span>
                     </div>
                     <div class="dues">
                         <span class="label">Dû:</span>
                         <span class="amount ${locataire.montantDu > 0 ? 'overdue' : 'paid'}">
-                            €${locataire.montantDu}
+                            FCFA ${locataire.montantDu}
                         </span>
                     </div>
                 </div>
@@ -352,7 +352,7 @@ function renderListView() {
                             </td>
                             <td>${locataire.propriete}</td>
                             <td>${locataire.telephone}</td>
-                            <td>€${locataire.loyer}/mois</td>
+                            <td>FCFA ${locataire.loyer}/mois</td>
                             <td>
                                 <span class="status-badge ${getStatusClass(locataire.statut)}">
                                     ${getStatusText(locataire.statut)}
@@ -360,7 +360,7 @@ function renderListView() {
                             </td>
                             <td>
                                 <span class="amount ${locataire.montantDu > 0 ? 'overdue' : 'paid'}">
-                                    €${locataire.montantDu}
+                                    FCFA ${locataire.montantDu}
                                 </span>
                             </td>
                             <td>
@@ -431,7 +431,7 @@ function updateStats() {
     document.getElementById('totalLocataires').textContent = total;
     document.getElementById('aJour').textContent = aJour;
     document.getElementById('enRetard').textContent = enRetard;
-    document.getElementById('montantDu').textContent = `€${montantDu}`;
+    document.getElementById('montantDu').textContent = `FCFA ${montantDu}`;
 }
 
 // Gestion des modals
@@ -495,7 +495,7 @@ async function loadProprietes() {
             result.properties.forEach(property => {
                 const option = document.createElement('option');
                 option.value = property.id;
-                option.textContent = `${property.name} - €${property.monthlyRent}/mois`;
+                option.textContent = `${property.name} - FCFA ${property.monthlyRent}/mois`;
                 option.dataset.rent = property.monthlyRent;
                 proprieteSelect.appendChild(option);
             });
@@ -547,7 +547,7 @@ async function handleAddLocataire(e) {
 
     // Validation côté client
     if (!newTenantData.prenom || !newTenantData.nom || !newTenantData.email || 
-        !newTenantData.telephone || !newTenantData.propertyId || !newTenantData.monthlyRent || 
+        !newTenantData.telephone || !newTenantData.propertyId || 
         !newTenantData.entryDate) {
         showNotification('Veuillez remplir tous les champs obligatoires', 'error');
         return;
@@ -652,7 +652,7 @@ function generateLocataireDetails(locataire) {
                     </div>
                     <div class="detail-item">
                         <label>Loyer mensuel:</label>
-                        <span>€${locataire.loyer}</span>
+                        <span>FCFA ${locataire.loyer}</span>
                     </div>
                     <div class="detail-item">
                         <label>Statut:</label>
@@ -663,7 +663,7 @@ function generateLocataireDetails(locataire) {
                     <div class="detail-item">
                         <label>Montant dû:</label>
                         <span class="amount ${locataire.montantDu > 0 ? 'overdue' : 'paid'}">
-                            €${locataire.montantDu}
+                            FCFA ${locataire.montantDu}
                         </span>
                     </div>
                 </div>
@@ -714,7 +714,7 @@ function generateLocataireDetails(locataire) {
                                     </td>
                                     <td>${transaction.description}</td>
                                     <td class="amount ${transaction.amount < 0 ? 'negative' : 'positive'}">
-                                        ${transaction.amount > 0 ? '+' : ''}€${transaction.amount}
+                                        ${transaction.amount > 0 ? '+' : ''}FCFA ${transaction.amount}
                                     </td>
                                     <td>
                                         <span class="status-badge ${getStatusClass(transaction.status)}">
@@ -733,16 +733,16 @@ function generateLocataireDetails(locataire) {
                 <div class="financial-summary">
                     <div class="summary-item">
                         <span class="summary-label">Total payé:</span>
-                        <span class="summary-value positive">€${calculateTotalPaid(transactions)}</span>
+                        <span class="summary-value positive">FCFA ${calculateTotalPaid(transactions)}</span>
                     </div>
                     <div class="summary-item">
                         <span class="summary-label">Total dû:</span>
-                        <span class="summary-value negative">€${locataire.montantDu}</span>
+                        <span class="summary-value negative">FCFA ${locataire.montantDu}</span>
                     </div>
                     <div class="summary-item">
                         <span class="summary-label">Solde:</span>
                         <span class="summary-value ${calculateBalance(transactions) >= 0 ? 'positive' : 'negative'}">
-                            €${calculateBalance(transactions)}
+                            FCFA ${calculateBalance(transactions)}
                         </span>
                     </div>
                 </div>
@@ -885,7 +885,7 @@ function downloadTransactionHistory(locataireId) {
     // Créer le contenu CSV
     let csvContent = "Date,Type,Description,Montant,Statut\n";
     transactions.forEach(transaction => {
-        csvContent += `${formatDate(transaction.date)},${getTransactionTypeText(transaction.type)},${transaction.description},${transaction.amount}€,${getStatusText(transaction.status)}\n`;
+        csvContent += `${formatDate(transaction.date)},${getTransactionTypeText(transaction.type)},${transaction.description},${transaction.amount}FCFA ,${getStatusText(transaction.status)}\n`;
     });
     
     // Créer et télécharger le fichier
@@ -910,7 +910,7 @@ function contactLocataire(id) {
 function recordPayment(id) {
     const locataire = locataires.find(l => l.id === id);
     if (locataire) {
-        const montant = prompt(`Enregistrer un paiement pour ${locataire.nom} (montant en €):`);
+        const montant = prompt(`Enregistrer un paiement pour ${locataire.nom} (montant en FCFA ):`);
         if (montant && !isNaN(montant)) {
             locataire.montantDu = Math.max(0, locataire.montantDu - parseFloat(montant));
             locataire.dernierPaiement = new Date().toISOString().split('T')[0];

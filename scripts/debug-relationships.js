@@ -13,25 +13,25 @@ async function debugRelationships() {
         console.log('\n📊 PROPRIÉTÉS:');
         properties.forEach(prop => {
             console.log(`  - ${prop.name} (ID: ${prop.id})`);
-            console.log(`    Status: ${prop.status}, Loyer: €${prop.monthlyRent}`);
+            console.log(`    Status: ${prop.status}, Loyer:  xaf${prop.monthlyRent}`);
         });
         
         console.log('\n👥 LOCATAIRES:');
         tenants.forEach(tenant => {
             console.log(`  - ${tenant.firstName} ${tenant.lastName} (ID: ${tenant.id})`);
-            console.log(`    Loyer: €${tenant.monthlyRent}, Dette: ${tenant.hasDebt ? 'Oui' : 'Non'}, Montant: €${tenant.debtAmount}`);
+            console.log(`    Loyer:  xaf${tenant.monthlyRent}, Dette: ${tenant.hasDebt ? 'Oui' : 'Non'}, Montant:  xaf${tenant.debtAmount}`);
         });
         
         console.log('\n💰 PAIEMENTS:');
         payments.forEach(payment => {
-            console.log(`  - €${payment.amount} - ${payment.status} - ${payment.date} - PropertyID: ${payment.propertyId}`);
+            console.log(`  -  xaf${payment.amount} - ${payment.status} - ${payment.date} - PropertyID: ${payment.propertyId}`);
         });
         
         console.log('\n🔗 TENTATIVE DE CORRESPONDANCE:');
         
         // Tester la logique de correspondance actuelle
         const updatedTenants = tenants.map(tenant => {
-            console.log(`\n📍 Pour ${tenant.firstName} ${tenant.lastName} (€${tenant.monthlyRent}):`);
+            console.log(`\n📍 Pour ${tenant.firstName} ${tenant.lastName} ( xaf${tenant.monthlyRent}):`);
             
             // Chercher une propriété avec le même loyer mensuel
             const matchingProperty = properties.find(property => 
@@ -47,7 +47,7 @@ async function debugRelationships() {
                 };
             } else {
                 console.log(`  ❌ Aucune correspondance trouvée`);
-                console.log(`     Propriétés avec loyer €${tenant.monthlyRent}:`);
+                console.log(`     Propriétés avec loyer  xaf${tenant.monthlyRent}:`);
                 const sameRentProperties = properties.filter(p => p.monthlyRent === tenant.monthlyRent);
                 if (sameRentProperties.length > 0) {
                     sameRentProperties.forEach(p => {

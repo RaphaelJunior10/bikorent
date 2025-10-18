@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { firestoreUtils, COLLECTIONS } = require('../config/firebase');
 const { isFirebaseEnabled } = require('../config/environment');
+const billingService = require('../services/billingService');
+const { checkPagePermissions, checkAdvancedReportsAccess } = require('../middleware/billingMiddleware');
 
 // Données des rapports (structure JSON facilement modifiable - fallback)
 const rapportsDataFallback = {
@@ -480,8 +482,8 @@ const rapportsDataFallback = {
 };
 
 // Page des rapports
-router.get('/', async (req, res) => {
-    let ownerId = 'U7h4HU5OfB9KTeY341NE'; // ID du propriétaire connecté
+router.get('/', checkPagePermissions, async (req, res) => {
+    let ownerId = req.session.user.id; // ID du propriétaire connecté
     
     // Initialiser les données par défaut
     let rapportsData = rapportsDataFallback;
@@ -629,16 +631,46 @@ router.get('/', async (req, res) => {
     // S'assurer que les données sont bien structurées
     console.log('📊 Données finales des rapports:', JSON.stringify(rapportsData['locataire'], null, 2));
     
+    // Récupérer les permissions de facturation
+    const userBillingPlan = await billingService.getUserBillingPlan(req.session.user.id);
+    const pagePermissions = req.pagePermissions || {};
+    
     res.render('rapports', {
         title: 'Rapports - BikoRent',
         pageTitle: 'Rapports',
         currentPage: 'rapports',
         user: {
-            name: 'Admin',
-            role: 'Propriétaire'
+            name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Admin',
+            role: req.session.user ? req.session.user.role : 'Propriétaire'
         },
-        rapportsData: rapportsData
+        rapportsData: rapportsData,
+        userBillingPlan: userBillingPlan,
+        pagePermissions: pagePermissions
     });
+});
+
+// Route pour les rapports avancés (nécessite un plan supérieur)
+router.get('/advanced', checkAdvancedReportsAccess, async (req, res) => {
+    try {
+        // Récupérer les données avancées
+        const userBillingPlan = await billingService.getUserBillingPlan(req.session.user.id);
+        const pagePermissions = req.pagePermissions || {};
+        
+        res.render('rapports-advanced', {
+            title: 'Rapports Avancés - BikoRent',
+            pageTitle: 'Rapports Avancés',
+            currentPage: 'rapports',
+            user: {
+                name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Admin',
+                role: req.session.user ? req.session.user.role : 'Propriétaire'
+            },
+            userBillingPlan: userBillingPlan,
+            pagePermissions: pagePermissions
+        });
+    } catch (error) {
+        console.error('❌ Erreur lors du rendu des rapports avancés:', error);
+        res.status(500).send('Erreur serveur');
+    }
 });
 
 // Fonctions utilitaires pour la génération des données

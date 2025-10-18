@@ -629,7 +629,7 @@ async function migratePayments(userIds, propertyIds) {
             const property = rentedProperties[tenantIndex % rentedProperties.length];
             
             if (!tenant || !property) {
-                console.log(`   ⚠️  Impossible de trouver le locataire ou la propriété pour le paiement ${payment.amount}€`);
+                console.log(`   ⚠️  Impossible de trouver le locataire ou la propriété pour le paiement ${payment.amount} xaf`);
                 continue;
             }
             
@@ -641,7 +641,7 @@ async function migratePayments(userIds, propertyIds) {
             
             const result = await firestoreUtils.add(COLLECTIONS.PAYMENTS, paymentData);
             paymentIds.push(result.id);
-            console.log(`   ✅ Paiement de ${payment.amount}€ pour ${tenant.name} migré (ID: ${result.id})`);
+            console.log(`   ✅ Paiement de ${payment.amount} xaf pour ${tenant.name} migré (ID: ${result.id})`);
         } catch (error) {
             console.error(`   ❌ Erreur lors de la migration du paiement:`, error);
         }

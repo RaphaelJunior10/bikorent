@@ -49,6 +49,9 @@ function initializeDashboard() {
     
     // Initialiser les calendriers
     initializeCalendars();
+    
+    // Appliquer les restrictions de plan
+    applyBillingRestrictions();
 }
 
 // Remplir les statistiques propriétaire
@@ -83,7 +86,7 @@ function populateProprietaireStats() {
             </div>
             <div class="stat-info">
                 <h3>CA Mensuel</h3>
-                <p class="stat-number">€${stats.caMensuel.toLocaleString()}</p>
+                <p class="stat-number">FCFA ${stats.caMensuel.toLocaleString()}</p>
             </div>
         </div>
         <div class="stat-card">
@@ -92,7 +95,7 @@ function populateProprietaireStats() {
             </div>
             <div class="stat-info">
                 <h3>Ce Mois</h3>
-                <p class="stat-number">€${stats.ceMois.toLocaleString()}</p>
+                <p class="stat-number">FCFA ${stats.ceMois.toLocaleString()}</p>
             </div>
         </div>
     `;
@@ -147,8 +150,8 @@ function populateProprietaireRetards() {
                 <td>${retard.locataire}</td>
                 <td>${retard.propriete}</td>
                 <td>${retard.moisImpayes}</td>
-                <td>€${retard.montantDu.toLocaleString()}</td>
-                <td><button class="btn-small" onclick="contacterLocataire('${retard.locataire}', '${retard.propriete}')">Contacter</button></td>
+                <td>FCFA ${retard.montantDu.toLocaleString()}</td>
+                <td><button class="btn-small" onclick="contacterLocataire('${retard.locataire}', '${retard.propriete}', ${retard.moisImpayes}, ${retard.montantDu}, '${retard.email || ''}', '${retard.telephone || ''}')">Contacter</button></td>
             </tr>
         `;
     });
@@ -222,7 +225,7 @@ function populateLocataireStats() {
             </div>
             <div class="stat-info">
                 <h3>Loyer Mensuel</h3>
-                <p class="stat-number">€${stats.loyerMensuel.toLocaleString()}</p>
+                <p class="stat-number">FCFA ${stats.loyerMensuel.toLocaleString()}</p>
             </div>
         </div>
         <div class="stat-card">
@@ -349,7 +352,7 @@ function generateCalendar(containerId, calendarData) {
             if (monthPayment) {
                 cellClass = `calendar-cell ${monthPayment.statut}`;
                 cellClass = monthPayment.statut === 'completé' ? 'calendar-cell à-venir' : cellClass;
-                cellContent = monthPayment.statut === 'payé' ? '✓' : monthPayment.statut === 'completé' ? '●' : '✗';
+                cellContent = monthPayment.statut === 'payé' ? '✓' : monthPayment.statut === 'completé' ? '●' : monthPayment.statut === 'partiel' ? '⚠' : '✗';
                 
                 tooltipData = `data-tenant="${paiement.locataire}" data-property="${paiement.propriete}" data-month="${month}" data-status="${monthPayment.statut}" data-amount="${monthPayment.montant}"`;
             }
@@ -389,8 +392,8 @@ function addCalendarTooltips() {
             const status = e.target.getAttribute('data-status');
             const amount = e.target.getAttribute('data-amount');
             
-            const statusText = status === 'payé' ? 'Payé' : status === 'en-retard' ? 'En retard' : 'Completé';
-            const statusColor = status === 'payé' ? '#10b981' : status === 'en-retard' ? '#ef4444' : '#f59e0b';
+            const statusText = status === 'payé' ? 'Payé' : status === 'en-retard' ? 'En retard' : status === 'partiel' ? 'Partiel' : 'Completé';
+            const statusColor = status === 'payé' ? '#10b981' : status === 'en-retard' ? '#ef4444' : status === 'partiel' ? 'gray' : '#f59e0b';
 
             tooltip.innerHTML = `
                 <div style="margin-bottom: 0.5rem;">
@@ -399,7 +402,7 @@ function addCalendarTooltips() {
                 <div><strong>Locataire:</strong> ${tenant}</div>
                 <div><strong>Propriété:</strong> ${property}</div>
                 <div><strong>Période:</strong> ${month}</div>
-                <div><strong>Montant:</strong> €${amount}</div>
+                <div><strong>Montant:</strong> FCFA ${amount}</div>
             `;
 
             tooltip.classList.add('show');
@@ -439,10 +442,183 @@ function addCalendarTooltips() {
 }
 
 // Fonction pour contacter un locataire
-function contacterLocataire(locataire, propriete) {
-    console.log('Contacter locataire:', locataire, propriete);
-    // Implémenter la logique de contact
-    alert('Fonctionnalité de contact à implémenter');
+function contacterLocataire(locataire, propriete, moisRetard, montantDu, email, telephone) {
+    console.log('Contacter locataire:', locataire, propriete, moisRetard, montantDu, email, telephone);
+    
+    // Récupérer les informations du propriétaire depuis les données du dashboard
+    const proprietaireNom = window.dashboardData?.proprietaire?.nom || 'Propriétaire';
+    
+    // Créer le message prérempli
+    const message = `Bonjour Mr ${locataire}, je suis ${proprietaireNom} propriétaire de la propriété ${propriete}, je viens vous informer à titre de rappel que vous avez ${moisRetard} mois de retard soit un montant de FCFA ${montantDu.toLocaleString()}, Je reste en attente du règlement de ces loyers, Merci et bonne journée.`;
+    
+    // Créer le popup
+    const popup = document.createElement('div');
+    popup.className = 'contact-popup-overlay';
+    popup.innerHTML = `
+        <div class="contact-popup">
+            <div class="contact-popup-header">
+                <h3><i class="fas fa-envelope"></i> Contacter ${locataire}</h3>
+                <button class="close-btn" onclick="closeContactPopup()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="contact-popup-content">
+                <div class="message-section">
+                    <label for="contactMessage">Message :</label>
+                    <textarea id="contactMessage" rows="6" placeholder="Votre message...">${message}</textarea>
+                </div>
+                
+                <div class="tenant-info">
+                    <h4><i class="fas fa-user"></i> Informations du locataire</h4>
+                    <div class="info-item">
+                        <strong>Nom :</strong> ${locataire}
+                    </div>
+                    ${email ? `<div class="info-item"><strong>Email :</strong> ${email}</div>` : ''}
+                    ${telephone ? `<div class="info-item"><strong>Téléphone :</strong> ${telephone}</div>` : ''}
+                </div>
+                
+                <div class="contact-options">
+                    <h4><i class="fas fa-phone"></i> Options de contact</h4>
+                    <div class="contact-buttons">
+                        ${telephone ? `
+                            <button class="contact-btn whatsapp-btn" onclick="contactWhatsApp('${telephone}', '${message}')">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>
+                        ` : ''}
+                        ${email ? `
+                            <button class="contact-btn email-btn" onclick="contactEmail('${email}', '${message}')">
+                                <i class="fas fa-envelope"></i> Email
+                            </button>
+                        ` : ''}
+                        ${telephone ? `
+                            <button class="contact-btn call-btn" onclick="contactCall('${telephone}')">
+                                <i class="fas fa-phone"></i> Appeler
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Ajouter le popup au DOM
+    document.body.appendChild(popup);
+    
+    // Empêcher le scroll du body
+    document.body.style.overflow = 'hidden';
+}
+
+// Fonction pour fermer le popup
+function closeContactPopup() {
+    const popup = document.querySelector('.contact-popup-overlay');
+    if (popup) {
+        popup.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+// Fonction pour contacter via WhatsApp
+function contactWhatsApp(telephone, message) {
+    const cleanPhone = telephone.replace(/[^\d]/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+// Fonction pour contacter via Email
+function contactEmail(email, message) {
+    const subject = encodeURIComponent('Rappel de loyer - BikoRent');
+    const body = encodeURIComponent(message);
+    const mailtoUrl = `mailto:${email}?subject=${subject}&body=${body}`;
+    window.location.href = mailtoUrl;
+}
+
+// Fonction pour appeler
+function contactCall(telephone) {
+    window.location.href = `tel:${telephone}`;
+}
+
+// Appliquer les restrictions de facturation
+function applyBillingRestrictions() {
+    // Vérifier si les permissions sont disponibles
+    if (!window.pagePermissions) {
+        console.log('Permissions de facturation non disponibles');
+        return;
+    }
+
+    const permissions = window.pagePermissions;
+    
+    // Masquer les fonctionnalités non autorisées
+    if (permissions.viewAdvancedStats && !permissions.viewAdvancedStats.allowed) {
+        // Masquer les statistiques avancées
+        const advancedStats = document.querySelectorAll('.advanced-stat');
+        advancedStats.forEach(stat => {
+            stat.style.display = 'none';
+        });
+        
+        // Ajouter un message de mise à niveau
+        showUpgradeMessage({
+            title: 'Statistiques avancées non disponibles',
+            message: 'Accédez aux analyses détaillées avec un plan supérieur',
+            suggestedPlan: 'Plan Standard ou supérieur',
+            featureDescription: 'Visualisez des graphiques avancés et des analyses détaillées'
+        });
+    }
+    
+    if (permissions.viewPropertyReports && !permissions.viewPropertyReports.allowed) {
+        // Masquer les rapports par propriété
+        const propertyReports = document.querySelectorAll('.property-report');
+        propertyReports.forEach(report => {
+            report.style.display = 'none';
+        });
+    }
+}
+
+// Fonction pour afficher un message de mise à niveau
+function showUpgradeMessage(data) {
+    // Supprimer les messages existants
+    const existingMessages = document.querySelectorAll('.upgrade-message');
+    existingMessages.forEach(msg => msg.remove());
+    
+    // Créer le nouveau message
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'upgrade-message';
+    messageDiv.innerHTML = `
+        <div class="upgrade-content">
+            <div class="upgrade-icon">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="upgrade-text">
+                <h3>${data.title || 'Fonctionnalité non disponible'}</h3>
+                <p>${data.message || 'Cette fonctionnalité n\'est pas disponible avec votre plan actuel.'}</p>
+                ${data.suggestedPlan ? `<p class="suggested-plan"><strong>Plan recommandé :</strong> ${data.suggestedPlan}</p>` : ''}
+                ${data.featureDescription ? `<p class="feature-description">${data.featureDescription}</p>` : ''}
+            </div>
+            <div class="upgrade-actions">
+                <a href="/parametres?tab=billing" class="btn btn-primary">
+                    <i class="fas fa-arrow-up"></i> Mettre à niveau
+                </a>
+                <button class="btn btn-secondary" onclick="closeUpgradeMessage()">
+                    <i class="fas fa-times"></i> Fermer
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Ajouter au DOM
+    document.body.appendChild(messageDiv);
+    
+    // Animation d'apparition
+    setTimeout(() => {
+        messageDiv.classList.add('show');
+    }, 100);
+}
+
+// Fonction pour fermer le message de mise à niveau
+function closeUpgradeMessage() {
+    const upgradeMessage = document.querySelector('.upgrade-message');
+    if (upgradeMessage) {
+        upgradeMessage.style.display = 'none';
+    }
 }
 
 

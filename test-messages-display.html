@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Affichage Messages - BikoRent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .test-error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .message-list {
+            margin-top: 15px;
+        }
+        .message-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        .message-item h4 {
+            margin: 0 0 10px 0;
+            color: #2563eb;
+        }
+        .message-meta {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .message-content {
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .user-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .user-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Test Affichage des Messages - BikoRent</h1>
+        
+        <div class="test-section">
+            <h3>📊 État Actuel</h3>
+            <p>Vérification que les messages s'affichent correctement avec les vrais utilisateurs.</p>
+            <button class="test-button" onclick="testMessages()">Tester les Messages</button>
+            <button class="test-button" onclick="testConversations()">Tester les Conversations</button>
+            <button class="test-button" onclick="testUnreadCount()">Tester le Compteur</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👥 Utilisateurs Existants</h3>
+            <div id="usersList"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💬 Messages en Base</h3>
+            <div id="messagesList"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Liens de Test</h3>
+            <a href="http://localhost:3000/chat" class="test-button" target="_blank">Ouvrir le Chat</a>
+            <a href="http://localhost:3000/dashboard" class="test-button" target="_blank">Dashboard</a>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Instructions de Test</h3>
+            <ol>
+                <li><strong>Vérifiez le badge :</strong> Doit afficher le nombre de messages non lus</li>
+                <li><strong>Liste des conversations :</strong> Les 3 conversations doivent s'afficher</li>
+                <li><strong>Messages :</strong> Cliquez sur une conversation pour voir les messages</li>
+                <li><strong>Noms des utilisateurs :</strong> Les vrais noms doivent s'afficher</li>
+                <li><strong>Envoi de messages :</strong> Testez l'envoi de nouveaux messages</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testMessages() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test des messages en cours...</div>';
+            
+            try {
+                // Test de récupération des conversations
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                if (text.includes('Marie Dubois') || text.includes('Pierre Martin') || text.includes('Sophie Leroy')) {
+                    results.innerHTML = `
+                        <div class="test-result">
+                            ✅ Messages correctement affichés<br>
+                            Les noms des utilisateurs sont présents dans la page
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Messages partiellement affichés<br>
+                            Vérifiez manuellement l'affichage des noms
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="test-result test-error">❌ Erreur de connexion</div>';
+            }
+        }
+        
+        async function testConversations() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test des conversations en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat');
+                const text = await response.text();
+                
+                const conversationCount = (text.match(/conversation-item/g) || []).length;
+                
+                if (conversationCount >= 3) {
+                    results.innerHTML = `
+                        <div class="test-result">
+                            ✅ Conversations correctement affichées<br>
+                            ${conversationCount} conversations trouvées
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="test-result test-warning">
+                            ⚠️ Conversations partiellement affichées<br>
+                            ${conversationCount} conversations trouvées (attendu: 3+)
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="test-result test-error">❌ Erreur de connexion</div>';
+            }
+        }
+        
+        async function testUnreadCount() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<div class="test-result">Test du compteur en cours...</div>';
+            
+            try {
+                const response = await fetch('/chat/api/unread-count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const badge = document.getElementById('unreadMessagesBadge');
+                    if (badge) {
+                        badge.textContent = data.unreadCount;
+                        badge.style.display = data.unreadCount > 0 ? 'flex' : 'none';
+                    }
+                    
+                    results.innerHTML = `
+                        <div class="test-result">
+                            ✅ Compteur fonctionnel<br>
+                            Messages non lus: ${data.unreadCount}
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = '<div class="test-result test-error">❌ Erreur API compteur</div>';
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="test-result test-error">❌ Erreur de connexion</div>';
+            }
+        }
+        
+        async function loadUsers() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '<div class="test-result">Chargement des utilisateurs...</div>';
+            
+            try {
+                // Simuler la récupération des utilisateurs
+                const users = [
+                    { id: 'U7h4HU5OfB9KTeY341NE', name: 'Pierre Martin', type: 'owner' },
+                    { id: 'TENANT001', name: 'Marie Dubois', type: 'tenant' },
+                    { id: 'TENANT002', name: 'Pierre Martin', type: 'tenant' },
+                    { id: 'TENANT003', name: 'Sophie Leroy', type: 'tenant' }
+                ];
+                
+                usersList.innerHTML = `
+                    <div class="user-info">
+                        ${users.map(user => `
+                            <div class="user-card">
+                                <strong>${user.name}</strong><br>
+                                ID: ${user.id}<br>
+                                Type: ${user.type}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                usersList.innerHTML = '<div class="test-result test-error">❌ Erreur lors du chargement des utilisateurs</div>';
+            }
+        }
+        
+        async function loadMessages() {
+            const messagesList = document.getElementById('messagesList');
+            messagesList.innerHTML = '<div class="test-result">Chargement des messages...</div>';
+            
+            try {
+                // Simuler la récupération des messages
+                const messages = [
+                    {
+                        id: 'MSG001',
+                        propertyName: 'Appartement T3 - Paris 15ème',
+                        senderName: 'Marie Dubois',
+                        recipientName: 'Pierre Martin',
+                        message: 'Bonjour, j\'ai une question concernant le loyer de l\'appartement.',
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2)
+                    },
+                    {
+                        id: 'MSG002',
+                        propertyName: 'Appartement T3 - Paris 15ème',
+                        senderName: 'Pierre Martin',
+                        recipientName: 'Marie Dubois',
+                        message: 'Bonjour ! Bien sûr, quelle est votre question ?',
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5)
+                    },
+                    {
+                        id: 'MSG003',
+                        propertyName: 'Appartement T3 - Paris 15ème',
+                        senderName: 'Marie Dubois',
+                        recipientName: 'Pierre Martin',
+                        message: 'Le loyer est-il négociable ? J\'ai un budget un peu serré.',
+                        timestamp: new Date(Date.now() - 1000 * 60 * 30)
+                    }
+                ];
+                
+                messagesList.innerHTML = `
+                    <div class="message-list">
+                        ${messages.map(msg => `
+                            <div class="message-item">
+                                <h4>${msg.propertyName}</h4>
+                                <div class="message-meta">
+                                    De: ${msg.senderName} → À: ${msg.recipientName} | 
+                                    ${msg.timestamp.toLocaleString('fr-FR')}
+                                </div>
+                                <div class="message-content">${msg.message}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                messagesList.innerHTML = '<div class="test-result test-error">❌ Erreur lors du chargement des messages</div>';
+            }
+        }
+        
+        // Chargement automatique au démarrage
+        window.addEventListener('load', () => {
+            loadUsers();
+            loadMessages();
+            setTimeout(testMessages, 1000);
+        });
+    </script>
+</body>
+</html>

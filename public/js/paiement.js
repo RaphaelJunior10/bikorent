@@ -164,11 +164,11 @@ function updateDebtSummary() {
         }
         
         if (monthlyRentEl) {
-            monthlyRentEl.textContent = `€${debt.monthlyRent}`;
+            monthlyRentEl.textContent = `FCFA ${debt.monthlyRent}`;
         }
         
         if (totalDebtEl) {
-            totalDebtEl.textContent = `€${debt.totalDebt}`;
+            totalDebtEl.textContent = `FCFA ${debt.totalDebt}`;
         }
         
         // Afficher le récapitulatif
@@ -250,7 +250,7 @@ function calculateServiceFees(provider, amount) {
         'mobidyc': amount * 0.01 // 1% pour Mobidyc
     };
     
-    // Frais minimum de 0.50€ et maximum de 5€
+    // Frais minimum de 0.50FCFA  et maximum de 5FCFA 
     const calculatedFee = fees[provider] || 0;
     return Math.max(0.50, Math.min(5.00, calculatedFee));
 }
@@ -266,9 +266,9 @@ function updateMobidycSummary() {
     const feesEl = document.getElementById('mobidycFees');
     const totalEl = document.getElementById('mobidycTotal');
     
-    if (amountEl) amountEl.textContent = `€${totalAmount.toFixed(2)}`;
-    if (feesEl) feesEl.textContent = `€${serviceFees.toFixed(2)}`;
-    if (totalEl) totalEl.textContent = `€${finalTotal.toFixed(2)}`;
+    if (amountEl) amountEl.textContent = `FCFA ${totalAmount.toFixed(2)}`;
+    if (feesEl) feesEl.textContent = `FCFA ${serviceFees.toFixed(2)}`;
+    if (totalEl) totalEl.textContent = `FCFA ${finalTotal.toFixed(2)}`;
     
     console.log('✅ Récapitulatif Mobidyc mis à jour:', { totalAmount, serviceFees, finalTotal });
 }
@@ -419,28 +419,30 @@ function setPaymentButtonLoading(isLoading) {
     if (!confirmBtn) return;
     
     if (isLoading) {
-        // Ajouter les classes de loading
-        confirmBtn.classList.add('btn-loading', 'btn-disabled');
+        // Sauvegarder le texte original si pas déjà fait
+        if (!confirmBtn.dataset.originalText) {
+            confirmBtn.dataset.originalText = confirmBtn.innerHTML;
+        }
         
-        // Ajouter le loader
-        const originalText = confirmBtn.innerHTML;
+        // Ajouter le loader avec le style utilisé dans les autres pages
         confirmBtn.innerHTML = `
-            <span class="btn-text">${originalText}</span>
-            <div class="btn-loader"></div>
+            <div class="payment-loader">
+                <div class="spinner"></div>
+                <span>Traitement en cours...</span>
+            </div>
         `;
         
         // Désactiver le bouton
         confirmBtn.disabled = true;
+        confirmBtn.classList.add('loading');
         
         console.log('🔄 Bouton de paiement désactivé avec loader');
     } else {
         // Retirer les classes de loading
-        confirmBtn.classList.remove('btn-loading', 'btn-disabled');
+        confirmBtn.classList.remove('loading');
         
         // Restaurer le texte original
-        confirmBtn.innerHTML = `
-            <i class="fas fa-check"></i> Confirmer le Paiement
-        `;
+        confirmBtn.innerHTML = confirmBtn.dataset.originalText || '<i class="fas fa-check"></i> Confirmer le Paiement';
         
         // Réactiver le bouton
         confirmBtn.disabled = false;
@@ -476,8 +478,8 @@ function validateMobidycPayment() {
         return false;
     }
     
-    if (!phoneNumber || phoneNumber.length !== 10) {
-        showNotification('Veuillez entrer un numéro de téléphone valide (10 chiffres)', 'error');
+    if (!phoneNumber || phoneNumber.length !== 9) {
+        showNotification('Veuillez entrer un numéro de téléphone valide (9 chiffres)', 'error');
         return false;
     }
     
@@ -547,7 +549,7 @@ function collectPaymentData() {
     const data = {
         propertyId: selectedProperty.id,
         propertyName: selectedProperty.name,
-        paymentMethod: selectedPaymentMethod,
+        method: selectedPaymentMethod,
         monthsToPay: monthsToPay,
         monthlyRent: monthlyRent,
         totalAmount: totalAmount,
@@ -601,7 +603,7 @@ async function sendPaymentRequest(paymentData) {
         console.log('🔍 Détails de la requête:', {
             propertyId: paymentData.propertyId,
             propertyName: paymentData.propertyName,
-            paymentMethod: paymentData.paymentMethod,
+            method: paymentData.paymentMethod,
             totalAmount: paymentData.totalAmount,
             finalTotal: paymentData.finalTotal
         });

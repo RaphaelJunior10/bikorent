@@ -1,22 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const dataService = require('../services/dataService');
+const billingService = require('../services/billingService');
+const { checkPagePermissions } = require('../middleware/billingMiddleware');
 
 // Page d'accueil (Dashboard)
-router.get('/', async (req, res) => {
+router.get('/', checkPagePermissions, async (req, res) => {
     try {
+        //On recupere le user
+        //const user = await dataService.getUser(req.session.user.id);
         // Générer les données du dashboard depuis la base de données
-        const dashboardData = await generateDashboardData();
+        const dashboardData = await generateDashboardData(req.session.user.id);
         
+        // Récupérer les permissions de facturation
+        const userBillingPlan = await billingService.getUserBillingPlan(req.session.user.id);
+        const pagePermissions = req.pagePermissions || {};
+        
+        // Récupérer et supprimer le compteur d'événements du jour
+        const todayEventsCount = req.session.todayEventsCount || 0;
+        delete req.session.todayEventsCount;
+
         res.render('dashboard', {
             title: 'Dashboard - BikoRent',
             pageTitle: 'Dashboard',
             currentPage: 'dashboard',
             user: {
-                name: 'Admin',
-                role: 'Propriétaire'
+                name: req.session.user ? `${req.session.user.firstName} ${req.session.user.lastName}` : 'Utilisateur',
+                role: req.session.user ? req.session.user.role : 'Propriétaire'
             },
-            dashboardData: dashboardData
+            dashboardData: dashboardData,
+            userBillingPlan: userBillingPlan,
+            pagePermissions: pagePermissions,
+            todayEventsCount: todayEventsCount
         });
     } catch (error) {
         console.error('❌ Erreur lors du rendu de la page dashboard:', error);
@@ -25,26 +40,27 @@ router.get('/', async (req, res) => {
 });
 
 // Fonction pour générer les données du dashboard depuis la base de données
-async function generateDashboardData() {
+async function generateDashboardData(userId) {
     try {
         console.log('🔄 Récupération des données du dashboard depuis la base de données...');
         
         // Récupérer toutes les données nécessaires
-        const properties = await dataService.getProperties();
-        const tenants = await dataService.getTenants();
-        const payments = await dataService.getPayments();
+        const properties = await dataService.getProperties(userId);
+        const tenants = await dataService.getTenants(userId);
+        const payments = await dataService.getPayments(userId);
         const users = await dataService.getUsers();
         
         //console.log(`📊 Données récupérées: ${properties.length} propriétés, ${tenants.length} locataires, ${payments.length} paiements, ${users.length} utilisateurs`);
         
-        // Identifier l'utilisateur connecté (U7h4HU5OfB9KTeY341NE)
-        const connectedUser = users.find(user => user.id === 'U7h4HU5OfB9KTeY341NE');
+        // Identifier l'utilisateur connecté
+        const connectedUser = users.find(user => user.id === userId);
         //console.log('👤 Utilisateur connecté:', connectedUser ? `${connectedUser.profile?.firstName} ${connectedUser.profile?.lastName}` : 'Non trouvé');
         //console.log('tenant list', tenants);
         const userProperties = properties.filter(property => property.ownerId === connectedUser.id);
         const userTenantIds =  userProperties.filter(property => property.tenant !== null).map(property => property.tenant.userId);
         const userTenants = tenants.filter(tenant => userTenantIds.includes(tenant.id));
         //console.log('reel properties', userProperties.length, 'reel tenants', userTenants.length);
+        
         
         // Établir les relations entre les données avec une logique améliorée
         const updatedTenants = tenants.map(tenant => {
@@ -118,15 +134,18 @@ async function generateDashboardData() {
             const totalPayments = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
             //On deduit le nombre de mois reellement non paye
             const unpaidMonths = monthsDiff - (totalPayments / (property.monthlyRent || 0));
+            const montantDu = Math.floor(monthsDiff) * (property.monthlyRent || 0) - totalPayments;
             //On recupere le tenant
             const tenant = tenants.find(t => property.tenant !== null && t.id === property.tenant.userId);
             if (!tenant) return null;//on ne retourne pas le tenant si il n'existe pas
-            
+            //console.log('unpaidMonths', unpaidMonths, 'monthsDiff', monthsDiff, 'totalPayments', totalPayments, 'property.monthlyRent', property.monthlyRent);
             return {
                 locataire: `${tenant.firstName} ${tenant.lastName}`,
                 propriete: property ? property.name : 'Propriété inconnue',
                 moisImpayes: Math.floor(unpaidMonths) || 0,
-                montantDu: Math.floor(unpaidMonths * (property.monthlyRent || 0)) || 0
+                montantDu: montantDu > 0 ? montantDu : 0,
+                email: tenant.email || '',
+                telephone: tenant.phone || tenant.telephone || ''
             };
 
         });
@@ -139,14 +158,15 @@ async function generateDashboardData() {
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, 10)
             .map(p => {
+                
                 const tenant = updatedTenants.find(t => t.id === p.tenantId);
                 const property = properties.find(prop => prop.id === p.propertyId);
                 const timeAgo = getTimeAgo(new Date(p.date));
                 
                 return {
-                    type: p.status === 'payé' ? 'paiement_recu' : 'paiement_retard',
-                    titre: p.status === 'payé' ? 'Paiement reçu' : 'Paiement en retard',
-                    description: `${tenant ? `${tenant.firstName} ${tenant.lastName}` : 'Locataire inconnu'} - ${property ? property.name : 'Propriété inconnue'} (€${p.amount})`,
+                    type: p.status === 'paid' ? 'paiement_recu' : 'paiement_retard',
+                    titre: p.status === 'paid' ? 'Paiement reçu' : 'Paiement en retard',
+                    description: `${tenant ? `${tenant.firstName} ${tenant.lastName}` : 'Locataire inconnu'} - ${property ? property.name : 'Propriété inconnue'} ( xaf${p.amount})`,
                     temps: timeAgo
                 };
             });
@@ -194,6 +214,10 @@ async function generateDashboardData() {
                                 payed += paidPlus > 0 ? paidPlus : 0; //Le surplus entre le montant payé et le loyer mensuel, sera utilisé comme loyer des mois en retard ou a venir
                                 lastMonthPayment = monthPaymentList[monthPaymentList.length - 1];
                                 paidUsed = property.monthlyRent;
+                                if(montant < property.monthlyRent){
+                                    paidUsed = montant;
+                                    monthPayment.status = 'partiel';
+                                }
                             }else {
                                 //Ici, le paiement n'a pas été effectué pour le mois en cours, on se sert du surplus pour le/les mois précédent en retard 
                                     if(payed > property.monthlyRent){
@@ -209,7 +233,7 @@ async function generateDashboardData() {
                             
                             tenantPayments.push({
                                 mois: monthYear,
-                                statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : 'en-retard') : 'en-retard',
+                                statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : monthPayment.status === 'partiel' ? 'partiel' : 'en-retard') : 'en-retard',
                                 montant: monthPayment ? monthPayment.amount || 0 : property.monthlyRent || 0,
                                 paidUsed: paidUsed
                             });
@@ -220,7 +244,7 @@ async function generateDashboardData() {
                     //On calcule le montant réellement utilisé pour le loyer
                     const paidUsedAll = tenantPayments.map(p => p.paidUsed).reduce((a, b) => a + b, 0);
                     //On calcule le montant total des paiements effectués
-                    const amountAll = tenantPayments.filter(p => p.statut == 'payé').map(p => p.montant).reduce((a, b) => a + b, 0);
+                    const amountAll = tenantPayments.filter(p => p.statut == 'payé' || p.statut == 'partiel').map(p => p.montant).reduce((a, b) => a + b, 0);
                     //On calcule le nombre de mois en retard ou a venir dont le surplus peut couvrir le loyer
                     let nb = Math.floor((amountAll - paidUsedAll) / property.monthlyRent);
                     
@@ -234,6 +258,10 @@ async function generateDashboardData() {
                             if(payment.statut == 'en-retard') {
                                 tenantPayments[i].statut = 'completé';
                                 tenantPayments[i].montant = 0;
+                                nb--;
+                            }
+                            if(payment.statut == 'partiel') {
+                                tenantPayments[i].statut = 'completé';
                                 nb--;
                             }
                         }
@@ -260,6 +288,10 @@ async function generateDashboardData() {
         //if (connectedUser && connectedUser.type === 'tenant') {
             // Trouver les propriétés louées par cet utilisateur
             const userTenant = updatedTenants.find(t => t.id === connectedUser.id);
+            //console.log('userTenant:', userTenant);
+            //console.log('updatedTenants:', updatedTenants);
+            
+            
             if (userTenant) {
                 //On recupere les proprietes loue par ce user
                 const thisUserProperties = properties.filter(p => p.tenant !== null && p.tenant.userId === connectedUser.id);
@@ -279,7 +311,7 @@ async function generateDashboardData() {
                     
                     //On deduit le nombre de mois reellement non paye
                     let unpaidMonths = monthsDiff - (totalPayments / (property.monthlyRent || 0));
-                    unpaidMonths = Math.ceil(unpaidMonths);
+                    unpaidMonths = Math.ceil(unpaidMonths) - 1;
                     //On recupere le proprietaire
                     const ownerId = tenants.find(t => property.tenant !== null && t.id === property.tenant.userId);
                     const owner = users.find(u => u.id === property.ownerId.trim());
@@ -309,9 +341,9 @@ async function generateDashboardData() {
                         const timeAgo = getTimeAgo(new Date(p.date));
                         
                         return {
-                            type: p.status === 'payé' ? 'paiement_effectue' : 'paiement_retard',
-                            titre: p.status === 'payé' ? 'Paiement effectué' : 'Paiement en retard',
-                            description: `${property ? property.name : 'Propriété inconnue'} (€${p.amount})`,
+                            type: p.status === 'paid' ? 'paiement_effectue' : 'paiement_retard',
+                            titre: p.status === 'paid' ? 'Paiement effectué' : 'Paiement en retard',
+                            description: `${property ? property.name : 'Propriété inconnue'} ( xaf${p.amount})`,
                             temps: timeAgo
                         };
                     });
@@ -359,6 +391,10 @@ async function generateDashboardData() {
                                 payed += paidPlus > 0 ? paidPlus : 0; //Le surplus entre le montant payé et le loyer mensuel, sera utilisé comme loyer des mois en retard ou a venir
                                 lastMonthPayment = monthPaymentList[monthPaymentList.length - 1];
                                 paidUsed = userProperty.monthlyRent;
+                                if(montant < userProperty.monthlyRent){
+                                    paidUsed = montant;
+                                    monthPayment.status = 'partiel';
+                                }
                                 
                             }else {
                                 //Ici, le paiement n'a pas été effectué pour le mois en cours, on se sert du surplus pour le/les mois précédent en retard 
@@ -375,7 +411,7 @@ async function generateDashboardData() {
                             
                             userTenantPayments.push({
                                 mois: monthYear,
-                                statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : 'en-retard') : 'en-retard',
+                                statut: monthPayment ? (monthPayment.status === 'paid' || monthPayment.status === 'payé' ? 'payé' : monthPayment.status === 'completé' ? 'completé' : monthPayment.status === 'partiel' ? 'partiel' : 'en-retard') : 'en-retard',
                                 montant: monthPayment ? monthPayment.amount || 0 : userProperty.monthlyRent || 0,
                                 paidUsed: paidUsed
                             });
@@ -385,7 +421,7 @@ async function generateDashboardData() {
                     //On calcule le montant réellement utilisé pour le loyer
                     const paidUsedAll = userTenantPayments.map(p => p.paidUsed).reduce((a, b) => a + b, 0);
                     //On calcule le montant total des paiements effectués
-                    const amountAll = userTenantPayments.filter(p => p.statut == 'payé').map(p => p.montant).reduce((a, b) => a + b, 0);
+                    const amountAll = userTenantPayments.filter(p => p.statut == 'payé' || p.statut == 'partiel').map(p => p.montant).reduce((a, b) => a + b, 0);
                     //On calcule le nombre de mois en retard ou a venir dont le surplus peut couvrir le loyer
                     let nb = Math.floor((amountAll - paidUsedAll) / userProperty.monthlyRent);
                     
@@ -399,6 +435,10 @@ async function generateDashboardData() {
                             if(payment.statut == 'en-retard') {
                                 userTenantPayments[i].statut = 'completé';
                                 userTenantPayments[i].montant = 0;
+                                nb--;
+                            }
+                            if(payment.statut == 'partiel') {
+                                userTenantPayments[i].statut = 'completé';
                                 nb--;
                             }
                         }
@@ -425,6 +465,8 @@ async function generateDashboardData() {
         // Construire l'objet dashboardData
         const dashboardData = {
             proprietaire: {
+                nom: connectedUser ? `${connectedUser.profile?.firstName || ''} ${connectedUser.profile?.lastName || ''}`.trim() : 'Propriétaire',
+                //currency: convertArrayForUser(connectedUser),
                 stats: {
                     biensTotal: totalProperties,
                     biensLoues: rentedProperties,
@@ -508,7 +550,7 @@ function getTimeAgo(date) {
 // API pour rafraîchir les données du dashboard
 router.get('/api/dashboard', async (req, res) => {
     try {
-        const dashboardData = await generateDashboardData();
+        const dashboardData = await generateDashboardData(req.session.user.id);
         res.json(dashboardData);
     } catch (error) {
         console.error('❌ Erreur lors de la récupération des données API dashboard:', error);
