@@ -180,7 +180,7 @@ router.get('/', checkPagePermissions, async (req, res) => {
                         const totalPayments = userPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
                         const unpaidMonths = monthsDiff - (totalPayments / (property.monthlyRent || 0));
                         const actualPayments = Math.floor(unpaidMonths);
-                        const moisImpayes = Math.floor(unpaidMonths) || 0;
+                        const moisImpayes = Math.ceil(unpaidMonths) || 0;
                         const montantDu = Math.floor(unpaidMonths * (property.monthlyRent || 0)) || 0;
 
                         console.log(user.profile.firstName, monthsDiff, entryDate, totalPayments, unpaidMonths, actualPayments, moisImpayes, montantDu);
