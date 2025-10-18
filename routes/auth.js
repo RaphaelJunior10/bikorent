@@ -131,8 +131,24 @@ router.post('/login', async (req, res) => {
         }
 
         console.log('✅ Session créée:', req.session.user);
-        console.log('🔄 Redirection vers /');
-        res.redirect('/');
+        
+        // Forcer la sauvegarde de la session avant la redirection
+        req.session.save((err) => {
+            if (err) {
+                console.error('❌ Erreur sauvegarde session:', err);
+                return res.render('login', {
+                    title: 'Connexion - BikoRent',
+                    currentPage: 'login',
+                    pageTitle: 'Connexion',
+                    layout: false,
+                    error: 'Erreur lors de la sauvegarde de session'
+                });
+            }
+            
+            console.log('💾 Session sauvegardée avec succès');
+            console.log('🔄 Redirection vers /');
+            res.redirect('/');
+        });
 
     } catch (error) {
         console.error('Erreur lors de la connexion:', error);

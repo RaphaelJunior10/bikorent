@@ -14,7 +14,9 @@
     "firebase:migrate": "node scripts/migrate-to-firebase.js",
     "check:env": "node scripts/check-env.js",
     "env:diagnostic": "node scripts/check-env.js",
-    "setup:firebase": "node scripts/setup-firebase.js"
+    "setup:firebase": "node scripts/setup-firebase.js",
+    "test:sessions": "node scripts/test-sessions.js",
+    "test:session-flow": "node scripts/test-session-flow.js"
   },
   "keywords": [
     "immobilier",
