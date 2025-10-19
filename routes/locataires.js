@@ -330,7 +330,7 @@ router.post('/remove-tenant', async (req, res) => {
                     propertyCount: propertiesCount,
                     date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
                 });
-
+                await dataService.updateUserBillingPlan2(ownerId, userBilling);
                 return res.json({
                     success: true,
                     message: `Locataire retiré avec succès de la propriété "${propertyName}"`

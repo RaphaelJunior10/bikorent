@@ -816,7 +816,17 @@ class DataService {
     async getPlanChange(userId) {
         try {
             if (this.useFirebase) {
-                return await firestoreUtils.getById(COLLECTIONS.USER_BILLING, userId);
+                const userBilling = await firestoreUtils.getById(COLLECTIONS.USER_BILLING, userId);
+                if (!userBilling) {
+                    //On enregistre un nouveau user_billing
+                    const newUserBilling = await firestoreUtils.add(COLLECTIONS.USER_BILLING, {
+                        userId: userId,
+                        facturations: [],
+                        paayements: []
+                    });
+                    return newUserBilling;
+                }
+                return userBilling;
             } else {
                 return testData.users.find(u => u.id === userId).billing.planChange || null;
             }

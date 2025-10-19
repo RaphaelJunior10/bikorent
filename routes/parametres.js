@@ -1436,8 +1436,10 @@ router.post('/api/process-payment', async (req, res) => {
         }
         // TODO: Intégrer avec le système de paiement réel
         // Pour l'instant, on simule un paiement réussi
-        //const amount2 = 100;
-        const result = await dataService.singlePayement(`TXN_${Date.now()}`, user.mobidyc.serviceId, amount, phoneNumber, user.mobidyc.serviceApikey);
+        //const amount2 = 100; 
+        const mobidyc_service_id = process.env.MOBIDYC_SERVICE_ID;
+        const mobidyc_service_apikey = process.env.MOBIDYC_SERVICE_APIKEY;
+        const result = await dataService.singlePayement(`TXN_${Date.now()}`, mobidyc_service_id, amount, phoneNumber, mobidyc_service_apikey);
         //console.log('result', result);
         
         const planId = user.facturation?.planId;

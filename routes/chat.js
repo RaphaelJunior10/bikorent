@@ -211,12 +211,12 @@ router.post('/api/add-tenant', async (req, res) => {
         const userBilling = await dataService.getPlanChange(ownerId);
         userBilling.facturations.push({
             planId: user.facturation?.planId,
-            propertyCount: propertiesCount,
+            propertyCount: propertiesCount, 
             date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
         });
-
+        await dataService.updateUserBillingPlan2(ownerId, userBilling);
         //On verifi si user_automations[userId].automations.email-tenant-confirmation.isActive est true
-        const userAutomations = await dataService.getUserAutomations(userId);
+        const userAutomations = await dataService.getUserAutomations(ownerId);
         if (userAutomations.automations['email-tenant-confirmation'].isActive) {
             //On recupere l email du locataire
             const tenant = await dataService.getUser(tenantId);
