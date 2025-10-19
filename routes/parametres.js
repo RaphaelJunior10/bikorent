@@ -959,7 +959,7 @@ router.post('/billing/change-plan', async (req, res) => {
         const userBilling = await dataService.getPlanChange(currentUserId);
         userBilling.facturations.push({
             planId: planId,
-            propertyCount: propertiesCount,
+            propertyCount: propertiesCount.length,
             date: new Date().toISOString().split('T')[0] //au format yyyy-mm-dd
         });
         await dataService.updateUserBillingPlan2(currentUserId, userBilling);
