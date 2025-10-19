@@ -93,7 +93,7 @@ router.post('/api/toggle/:automationId', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Utilisateur non trouvé' });
         }
 
-        const userPlan = user.billing?.plan || 'free';
+        const userPlan = user.facturation?.planId || 'basique';
         if (userPlan !== 'premium' && userPlan !== 'enterprise') {
             return res.status(403).json({ 
                 success: false, 

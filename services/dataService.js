@@ -821,7 +821,7 @@ class DataService {
                     //On enregistre un nouveau user_billing
                     const newUserBilling = await firestoreUtils.add(COLLECTIONS.USER_BILLING, {
                         facturations: [],
-                        paayements: []
+                        payments: []
                     }, userId);
                     
                     return newUserBilling;
