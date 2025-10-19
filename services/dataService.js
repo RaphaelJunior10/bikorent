@@ -819,18 +819,12 @@ class DataService {
                 const userBilling = await firestoreUtils.getById(COLLECTIONS.USER_BILLING, userId);
                 if (!userBilling) {
                     //On enregistre un nouveau user_billing
+                    const newUserBilling = await firestoreUtils.add(COLLECTIONS.USER_BILLING, {
+                        facturations: [],
+                        paayements: []
+                    }, userId);
                     
-                    await firestoreUtils
-                    .collection(COLLECTIONS.USER_BILLING)
-                    .doc(userId) // on précise l'ID du document
-                    .set({
-                        facturations: [],
-                        paiements: []
-                    });
-                    return {
-                        facturations: [],
-                        paiements: []
-                    };
+                    return newUserBilling;
                 }
                 return userBilling;
             } else {
