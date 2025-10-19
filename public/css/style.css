@@ -21,6 +21,59 @@
     --header-height: 70px;
 }
 
+/* Styles pour le logo BikoRent */
+.logo-img {
+    height: 20px;
+    width: auto;
+    max-width: 60px;
+    vertical-align: middle;
+    margin-right: 6px;
+    display: inline-block;
+    object-fit: contain;
+}
+
+/* Logo dans le sidebar */
+.sidebar-header h2 .logo-img {
+    height: 22px;
+    max-width: 70px;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
+/* Logo dans les pages d'authentification */
+.auth-logo .logo-img {
+    height: 32px;
+    max-width: 100px;
+    margin-right: 10px;
+    margin-bottom: 6px;
+    object-fit: contain;
+}
+
+/* Logo dans les navbar */
+.navbar-logo .logo-img {
+    height: 20px;
+    max-width: 60px;
+    margin-right: 6px;
+    object-fit: contain;
+}
+
+/* Logo dans les boutons */
+.btn .logo-img {
+    height: 14px;
+    max-width: 40px;
+    margin-right: 4px;
+    vertical-align: middle;
+    object-fit: contain;
+}
+
+/* Icônes dans le header des pages internes */
+.top-header h1 i {
+    margin-right: 10px;
+    color: #2563eb;
+    font-size: 1.2em;
+    vertical-align: middle;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f1f5f9;

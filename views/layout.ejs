@@ -93,7 +93,46 @@
                 <i class="fas fa-bars"></i>
             </button>
             <div class="header-content">
-                <h1><%= locals.pageTitle || 'BikoRent' %></h1>
+                <h1>
+                    <% 
+                    // Définir l'icône selon la page
+                    let pageIcon = 'fas fa-home';
+                    if (locals.currentPage) {
+                        switch(locals.currentPage) {
+                            case 'dashboard':
+                                pageIcon = 'fas fa-tachometer-alt';
+                                break;
+                            case 'locataires':
+                                pageIcon = 'fas fa-users';
+                                break;
+                            case 'proprietes':
+                                pageIcon = 'fas fa-building';
+                                break;
+                            case 'paiements':
+                                pageIcon = 'fas fa-credit-card';
+                                break;
+                            case 'rapports':
+                                pageIcon = 'fas fa-chart-bar';
+                                break;
+                            case 'parametres':
+                                pageIcon = 'fas fa-cog';
+                                break;
+                            case 'automatisations':
+                                pageIcon = 'fas fa-robot';
+                                break;
+                            case 'calendrier':
+                                pageIcon = 'fas fa-calendar-alt';
+                                break;
+                            case 'chat':
+                                pageIcon = 'fas fa-comments';
+                                break;
+                            default:
+                                pageIcon = 'fas fa-home';
+                        }
+                    }
+                    %>
+                    <i class="<%= pageIcon %>"></i> <%= locals.pageTitle || 'BikoRent' %>
+                </h1>
                 <div class="user-info">
                     <span>Bienvenue, <%
                     if (locals.user) {
