@@ -6,7 +6,7 @@ const dataService = require('../services/dataService');
 // Page principale du chat
 router.get('/', async (req, res) => {
     try {
-        //On recupere le user
+        //On recupere le user 
         const user = await dataService.getUser(req.session.user.id);
         // Récupérer les conversations de l'utilisateur connecté
         const conversations = await getConversations(req.session.user.id);
@@ -265,13 +265,18 @@ async function enrichConversationsWithUserNames(conversations) {
                 // Prioriser le nom complet, puis firstName + lastName, puis email
                 if (user.profile.firstName && user.profile.lastName) {
                     conv.senderName = `${user.profile.firstName} ${user.profile.lastName}`;
+                    
                 } else if (user.profile.firstName) {
                     conv.senderName = user.profile.firstName;
                 } else {
                     conv.senderName = user.profile.email || `Utilisateur ${conv.senderId}`;
                 }
+                conv.senderEmail = user.profile.email;
+                conv.senderPhone = user.profile.phone;
             } else {
                 conv.senderName = `Utilisateur ${conv.senderId}`;
+                conv.senderEmail = `Non disponnible`;
+                conv.senderPhone = `Non disponnible`;
             }
             return conv;
         });

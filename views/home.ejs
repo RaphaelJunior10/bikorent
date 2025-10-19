@@ -701,7 +701,7 @@
                     <% if (isAuthenticated) { %>
                         <a href="/dashboard" class="btn-navbar btn-user">
                             <i class="fas fa-user"></i>
-                            <span><%= user.firstName %></span>
+                            <span><%= user.firstName.split(' ')[0] %></span>
                         </a>
                     <% } else { %>
                         <a href="/auth/login" class="btn-navbar btn-outline">Connexion</a>
@@ -749,7 +749,7 @@
                 <% if (isAuthenticated) { %>
                     <a href="/dashboard" class="btn-navbar btn-user">
                         <i class="fas fa-user"></i>
-                        <span><%= user.firstName %></span>
+                        <span><%= user.firstName.split(' ')[0] %></span>
                     </a>
                 <% } else { %>
                     <a href="/auth/login" class="btn-navbar btn-outline">Connexion</a>

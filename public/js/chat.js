@@ -364,6 +364,8 @@ class ChatManager {
         }
         
         console.log('🎨 Génération du HTML des conversations...');
+        console.log('🎨 Conversations:', this.conversations);
+        
             const html = this.conversations.map(conversation => `
                 <div class="conversation-item ${this.currentPropertyId === conversation.propertyId && this.currentSenderId === conversation.senderId ? 'active' : ''}" 
                      data-property-id="${conversation.propertyId}" data-sender-id="${conversation.senderId}">
@@ -371,7 +373,7 @@ class ChatManager {
                         <!-- Ligne 1: Nom de l'utilisateur avec petite icône -->
                         <div class="conversation-line conversation-user">
                             <i class="fas fa-user-circle conversation-icon-small"></i>
-                            <span class="conversation-sender-name">${conversation.senderName}</span>
+                            <span class="conversation-sender-name">${conversation.senderName.includes('undefined') ? 'Propriétaire' : conversation.senderName}</span>
                             <span class="conversation-time">
                                 ${this.formatTime(conversation.lastMessageTime)}
                             </span>
@@ -393,7 +395,7 @@ class ChatManager {
                 </div>
             `).join('');
         
-        console.log('🎨 HTML généré:', html.substring(0, 200) + '...');
+        console.log('🎨 HTML généré:', html.substring(0, 2000) + '...');
         conversationsList.innerHTML = html;
         console.log('✅ Conversations rendues avec succès');
     }
@@ -581,18 +583,18 @@ class ChatManager {
         const userJoinDateElement = document.getElementById('popupUserJoinDate');
         
         if (userNameElement) {
-            userNameElement.textContent = conversation.senderName || 'Utilisateur inconnu';
+            userNameElement.textContent = conversation.senderName.includes('undefined') ? 'Propriétaire' : conversation.senderName || 'Utilisateur inconnu';
         }
         
         if (userEmailElement) {
             // Générer un email basé sur le nom (pour la démo)
-            const email = this.generateEmailFromName(conversation.senderName);
+            const email = conversation.senderEmail || 'Non disponnible';
             userEmailElement.textContent = email;
         }
         
         if (userPhoneElement) {
             // Générer un numéro de téléphone (pour la démo)
-            const phone = this.generatePhoneNumber();
+            const phone = conversation.senderPhone || 'Non disponnible';
             userPhoneElement.textContent = phone;
         }
         
@@ -1038,7 +1040,7 @@ class ChatManager {
             
             // Remplir les informations du locataire
             document.getElementById('popupTenantName').textContent = conversation.senderName;
-            document.getElementById('popupTenantEmail').textContent = this.generateEmailFromName(conversation.senderName);
+            document.getElementById('popupTenantEmail').textContent = conversation.senderEmail || 'Non disponnible';
             
             // Remplir le message de confirmation
             document.getElementById('confirmTenantName').textContent = conversation.senderName;

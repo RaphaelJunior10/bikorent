@@ -127,13 +127,15 @@ async function generateDashboardData(userId) {
             //On recupere payment.tenant.entryDate
             const entryDate = (property.tenant !== null) ? property.tenant.entryDate : new Date();
             //On calcule le nombre de mois entre entryDate et la date actuelle
-            const monthsDiff = (new Date() - new Date(entryDate)) / (1000 * 60 * 60 * 24 * 30);
+            const monthsDiff = Math.floor((new Date() - new Date(entryDate)) / (1000 * 60 * 60 * 24 * 30));
+            //console.log('monthsDiff**************************', monthsDiff);
+            
             //On recupere le nombre de paiement effectués depuis entryDate
             const payments = updatedPayments.filter(p => p.propertyId === property.id && p.date >= entryDate);
             //On recupere la somme des montant des paiements
             const totalPayments = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
             //On deduit le nombre de mois reellement non paye
-            const unpaidMonths = monthsDiff - (totalPayments / (property.monthlyRent || 0));
+            const unpaidMonths = Math.floor(monthsDiff - (totalPayments / (property.monthlyRent || 0)));
             const montantDu = Math.floor(monthsDiff) * (property.monthlyRent || 0) - totalPayments;
             //On recupere le tenant
             const tenant = tenants.find(t => property.tenant !== null && t.id === property.tenant.userId);
@@ -183,9 +185,11 @@ async function generateDashboardData(userId) {
                     let lastMonthPayment = null;
                     for (let i = 0; i <= 11; i++) {
                         const date = new Date();
-                        date.setDate(25);
+                        date.setDate(1);
                         date.setMonth(date.getMonth() - i );
-                        date.setUTCDate(25);
+                        date.setUTCDate(1);
+                        console.log('date**************************', date, entryDate);
+                        
                         if (date > entryDate) {
                             const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
                             
@@ -193,7 +197,7 @@ async function generateDashboardData(userId) {
                             let monthPayment = null;
                             const monthPaymentList = updatedPayments.filter(p => {
                                 const paymentDate = new Date(p.date);
-                                paymentDate.setUTCDate(25);
+                                paymentDate.setUTCDate(1);
                                 
                                 return p.tenantId === tenant.id && 
                                     paymentDate.getMonth() === date.getMonth() && 
@@ -311,7 +315,7 @@ async function generateDashboardData(userId) {
                     
                     //On deduit le nombre de mois reellement non paye
                     let unpaidMonths = monthsDiff - (totalPayments / (property.monthlyRent || 0));
-                    unpaidMonths = Math.ceil(unpaidMonths) - 1;
+                    unpaidMonths = Math.floor(unpaidMonths);
                     //On recupere le proprietaire
                     const ownerId = tenants.find(t => property.tenant !== null && t.id === property.tenant.userId);
                     const owner = users.find(u => u.id === property.ownerId.trim());
@@ -360,9 +364,9 @@ async function generateDashboardData(userId) {
                     let lastMonthPayment = null;
                     for (let i = 0; i <= 11; i++) {
                         const date = new Date();
-                        date.setDate(25);
+                        date.setDate(1);
                         date.setMonth(date.getMonth() - i );
-                        date.setUTCDate(25);
+                        date.setUTCDate(1);
                         const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
                         if (date > entryDate) {
                             let monthPayment = null;
@@ -370,7 +374,7 @@ async function generateDashboardData(userId) {
                                 //console.log('p', p);
                                 
                                 const paymentDate = new Date(p.date);
-                                paymentDate.setUTCDate(25);
+                                paymentDate.setUTCDate(1);
                                 //console.log(paymentDate.getMonth(), date.getMonth(), paymentDate.getFullYear(), date.getFullYear());
                                 
                                 return paymentDate.getMonth() === date.getMonth() && 

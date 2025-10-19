@@ -361,7 +361,7 @@ router.get('/', checkPagePermissions, async (req, res) => {
                     const user = firebaseUsers.find(u => u.id === property.tenant.userId);
                     const entryDate = property.tenant.entryDate;
                     const dateNow = new Date();
-                    const monthDiff = fullMonthsBetween(new Date(entryDate), dateNow) - 1; //tien compte de la difference des annees
+                    const monthDiff = fullMonthsBetween(new Date(entryDate), dateNow); //tien compte de la difference des annees
                     //if (user && user.type === 'tenant') {
                         console.log(`💳 Traitement des paiements pour: ${user.profile.firstName} ${user.profile.lastName}`);
                         
@@ -375,7 +375,7 @@ router.get('/', checkPagePermissions, async (req, res) => {
                         // Traiter chaque paiement du locataire
                         userPayments.forEach(payment => {
                             const date2 = new Date(payment.date);
-                            date2.setUTCDate(25);
+                            date2.setUTCDate(1);
                             if (user.id !== connectedUserId) {
                                 
                                 
@@ -621,9 +621,9 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                     let lastMonthPayment = null;
                     for (let i = 0; i <= 11; i++) {
                         const date = new Date();
-                        date.setDate(25);
+                        date.setDate(1);
                         date.setMonth(date.getMonth() - i);
-                        date.setUTCDate(25);
+                        date.setUTCDate(1);
                         
                         if (date > entryDate) {
                             const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
@@ -632,7 +632,7 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                             let monthPayment = null;
                             const monthPaymentList = payments.filter(p => {
                                 const paymentDate = new Date(p.date);
-                                paymentDate.setUTCDate(25);
+                                paymentDate.setUTCDate(1);
                                 
                                 return p.userId === tenant.id && 
                                     p.propertyId === property.id &&
@@ -739,9 +739,9 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                 let lastMonthPayment = null;
                 for (let i = 0; i <= 11; i++) {
                     const date = new Date();
-                    date.setDate(25);
+                    date.setDate(1);
                     date.setMonth(date.getMonth() - i);
-                    date.setUTCDate(25);
+                    date.setUTCDate(1);
                     //On cherche a identifier ls payements payé puis a marquer paye les autres mois si le montant le permet
                     if (date > entryDate) {
                         const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
@@ -751,7 +751,7 @@ async function generateCalendarDataFromDashboard(properties, users, payments, co
                         const monthPaymentList = payments.filter(p => {
                             //On ne recupere que les paiements du mois en cours de l'utilisateur
                             const paymentDate = new Date(p.date);
-                            paymentDate.setUTCDate(25); //On ramene au 25 pour eviter les erreures de conversion des sates du aux fuseau horaire
+                            paymentDate.setUTCDate(1); //On ramene au 25 pour eviter les erreures de conversion des sates du aux fuseau horaire
                             return p.userId === connectedUserId && 
                             p.propertyId === userProperty.id &&
                             paymentDate.getMonth() === date.getMonth() && 
@@ -938,16 +938,16 @@ function generateMoisCalendrier(paiements, propriete, entryDate) {
 
     for (let i = 11; i >= 0; i--) {
         const date = new Date();
-        date.setUTCDate(25);
+        date.setUTCDate(1);
         date.setMonth(date.getMonth() - i );
-        date.setUTCDate(25);
+        date.setUTCDate(1);
         const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
         
         
         const moisLong = formatMonthYear(date);
         const paiementExistant = paiements.find(p => {
             const paymentDate = new Date(p.datePaiement);
-                            paymentDate.setUTCDate(25);
+                            paymentDate.setUTCDate(1);
             return formatMonthYear(paymentDate) === moisLong
         }
         );
@@ -1060,15 +1060,15 @@ router.get('/paiement', async (req, res) => {
                 console.log('🔍 User data name:', userData.name);
                 console.log('🔍 User data email:', userData.email);
                 
-                if (userData.firstName && userData.lastName) {
-                    userInfo.name = `${userData.firstName} ${userData.lastName}`;
+                if (userData.profile.firstName && userData.profile.lastName) {
+                    userInfo.name = `${userData.profile.firstName} ${userData.profile.lastName}`;
                     console.log('✅ Using firstName + lastName:', userInfo.name);
-                } else if (userData.name) {
-                    userInfo.name = userData.name;
+                } else if (userData.profile.name) {
+                    userInfo.name = userData.profile.name;
                     console.log('✅ Using name:', userInfo.name);
                 }
-                if (userData.email) {
-                    userInfo.email = userData.email;
+                if (userData.profile.email) {
+                    userInfo.email = userData.profile.email;
                 }
                 if (userData.role) {
                     userInfo.role = userData.role;
@@ -1111,8 +1111,9 @@ async function calculateUserDebts(userId, properties) {
             const today = new Date();
             const monthsDiff = (today - entryDate) / (1000 * 60 * 60 * 24 * 30);
             const totalPayments = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-            const unpaidMonths = Math.ceil(monthsDiff - (totalPayments / (property.monthlyRent || 0)));
+            const unpaidMonths = Math.floor(monthsDiff - (totalPayments / (property.monthlyRent || 0))) ;
             //const unpaidMonths = Math.max(0, Math.ceil(monthsDiff - (totalPayments / (property.monthlyRent || 0))));
+            console.log('unpaidMonths', unpaidMonths, monthsDiff, totalPayments, property.monthlyRent);
             
             debts.push({
                 propertyId: property.id,

@@ -282,7 +282,7 @@ router.post('/register', async (req, res) => {
                     photo: null
                 },
                 notifications: {
-                    emailPayments: true,
+                    emailPayments: false,
                     emailOverdue: false,
                     emailNewTenants: false,
                     pushAlerts: false,
@@ -294,7 +294,7 @@ router.post('/register', async (req, res) => {
                     timezone: 'Europe/Paris',
                     darkMode: false,
                     dateFormat: 'DD/MM/YYYY',
-                    currency: 'EUR'
+                    currency: 'XAF'
                 },
                 security: {
                     twoFactorAuth: false,

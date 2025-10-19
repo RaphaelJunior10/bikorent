@@ -357,10 +357,10 @@ function testDataDisplay() {
                     </div>
                     <div class="property-tenant">
                         <i class="fas fa-user"></i>
-                        <span>${property.tenant || 'Aucun locataire'}</span>
+                        <span>${property.tenant.name || 'Aucun locataire'}</span>
                     </div>
                     <div class="property-rent">
-                        <i class="fas fa-euro-sign"></i>
+                        <i class="fas fa-money-bill"></i>
                         <span>FCFA ${property.rent}/mois</span>
                     </div>
                     <div class="property-features">
@@ -656,10 +656,10 @@ function renderProperties() {
                 </div>
                 <div class="property-tenant">
                     <i class="fas fa-user"></i>
-                    <span>${property.tenant || 'Aucun locataire'}</span>
+                    <span>${property.tenant.name || 'Aucun locataire'}</span>
                 </div>
                 <div class="property-rent">
-                    <i class="fas fa-euro-sign"></i>
+                    <i class="fas fa-money-bill"></i>
                     <span>FCFA ${property.rent}/mois</span>
                 </div>
                 <div class="property-features">
@@ -1807,8 +1807,8 @@ function generatePaymentLink(propertyId) {
             <div class="modal-body">
                 <div class="property-info">
                     <h4>${property.name}</h4>
-                    <p><i class="fas fa-euro-sign"></i> Loyer mensuel: FCFA ${property.rent}</p>
-                    <p><i class="fas fa-user"></i> Locataire: ${property.tenant || 'Non défini'}</p>
+                    <p><i class="fas fa-money-bill"></i> Loyer mensuel: FCFA ${property.rent}</p>
+                    <p><i class="fas fa-user"></i> Locataire: ${property.tenant.name || 'Non défini'}</p>
                 </div>
                 
                 <div class="link-section">

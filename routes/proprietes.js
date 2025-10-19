@@ -191,6 +191,8 @@ router.get('/', checkPagePermissions, async (req, res) => {
                 { type: 'where', field: 'ownerId', operator: '==', value: ownerId },
                 { type: 'where', field: 'isDeleted', operator: '==', value: false }
             ]);
+            const tenants = await dataService.getTenants(ownerId);
+            //console.log('🔄 Tenants récupérés:', tenants);
             
             // Transformer les données Firebase en format attendu par l'interface
             properties = firebaseProperties.map(property => ({
@@ -206,13 +208,19 @@ router.get('/', checkPagePermissions, async (req, res) => {
                 coordinates: property.coordinates,
                 rent: property.monthlyRent,
                 status: property.status,
-                tenant: property.tenant ? property.tenant.name : null,
+                tenant: property.tenant ? property.tenant : null,
                 description: property.description,
                 features: property.features,
                 image: property.images && property.images.length > 0 ? property.images[0] : null,
                 images: property.images || [],
                 isPaymentLink: property.isPaymentLink
             }));
+            //console.log('🔄 Properties récupérées:', properties);
+            
+            for(var i = 0; i < properties.length; i++) {
+                const tenant = tenants.find(tenant => tenant.id === properties[i].tenant.userId);
+                properties[i].tenant.name = tenant.firstName + ' ' + tenant.lastName;
+            }
             
             console.log(`✅ ${properties.length} propriétés récupérées depuis Firebase pour le propriétaire ${ownerId}`);
         } catch (error) {
