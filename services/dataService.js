@@ -820,7 +820,7 @@ class DataService {
                 if (!userBilling) {
                     //On enregistre un nouveau user_billing
                     
-                    const newUserBilling = await firestore
+                    await firestoreUtils
                     .collection(COLLECTIONS.USER_BILLING)
                     .doc(userId) // on précise l'ID du document
                     .set({
