@@ -1455,7 +1455,12 @@ router.post('/api/process-payment', async (req, res) => {
         console.log('Mise à jour du user_billing');
         //On recupere le dernier payement
         const billing_history_last = await dataService.getBillingHistory(req.session.user.id, 1);
-        const endDate = new Date(billing_history_last[0].date || billing_history_last[0].dueDate);
+        const endDate = new Date();
+        if(billing_history_last.length > 0){
+            endDate = new Date(billing_history_last[0].date || billing_history_last[0].dueDate);
+        }else{
+            endDate = new Date(user.createdAt);
+        }
         //On enregistre dans billing_history
         //const billing_history = await dataService.getBillingHistory(req.session.user.id);
         const billing_history = {
