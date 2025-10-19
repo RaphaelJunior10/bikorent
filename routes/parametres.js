@@ -175,6 +175,7 @@ router.get('/', async (req, res) => {
         } else {
             console.log('⚠️ Aucune donnée trouvée, utilisation des données de fallback');
         }
+
         
         // Utiliser les données récupérées ou les données de fallback
         const finalData = parametresData || parametresDataFallback;
@@ -1459,7 +1460,7 @@ router.post('/api/process-payment', async (req, res) => {
         if(billing_history_last.length > 0){
             endDate = new Date(billing_history_last[0].date || billing_history_last[0].dueDate);
         }else{
-            endDate = new Date(user.createdAt);
+            endDate = user.createdAt;
         }
         //On enregistre dans billing_history
         //const billing_history = await dataService.getBillingHistory(req.session.user.id);
