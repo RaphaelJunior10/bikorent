@@ -17,7 +17,8 @@
     "setup:firebase": "node scripts/setup-firebase.js",
     "test:sessions": "node scripts/test-sessions.js",
     "test:session-flow": "node scripts/test-session-flow.js",
-    "setup:mongodb-sessions": "node scripts/setup-mongodb-sessions.js"
+    "setup:mongodb-sessions": "node scripts/setup-mongodb-sessions.js",
+    "test:contact-form": "node scripts/test-contact-form.js"
   },
   "keywords": [
     "immobilier",

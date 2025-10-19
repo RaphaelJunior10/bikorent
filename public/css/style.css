@@ -5934,8 +5934,8 @@ input:checked + .slider:before {
 
 /* Padding spécifique pour la page locataires */
 body.locataires-page {
-    padding-left: 2rem;
-    padding-right: 2rem;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 /* Responsive pour les petits écrans */

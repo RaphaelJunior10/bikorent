@@ -797,7 +797,7 @@
                         </div>
                         <div class="contact-details">
                             <h4>Adresse</h4>
-                            <p>123 Avenue des Champs-Élysées<br>75008 Paris, France</p>
+                            <p>Port-Gentil, <br>Gabon</p>
                         </div>
                     </div>
                     
@@ -807,7 +807,7 @@
                         </div>
                         <div class="contact-details">
                             <h4>Téléphone</h4>
-                            <p><a href="tel:+33123456789">+33 1 23 45 67 89</a></p>
+                            <p><a href="tel:+24166923607">+241 66923607</a></p>
                         </div>
                     </div>
                     
@@ -817,7 +817,7 @@
                         </div>
                         <div class="contact-details">
                             <h4>Email</h4>
-                            <p><a href="mailto:contact@bikorent.fr">contact@bikorent.fr</a></p>
+                            <p><a href="mailto:vyndore.angora@gmail.com">vyndore.angora@gmail.com</a></p>
                         </div>
                     </div>
                     
@@ -838,12 +838,12 @@
                     
                     <div id="successMessage" class="success-message">
                         <i class="fas fa-check-circle"></i>
-                        Votre message a été envoyé avec succès !
+                        <p>Votre message a été envoyé avec succès !</p>
                     </div>
                     
                     <div id="errorMessage" class="error-message">
                         <i class="fas fa-exclamation-circle"></i>
-                        Une erreur est survenue. Veuillez réessayer.
+                        <p>Une erreur est survenue. Veuillez réessayer.</p>
                     </div>
                     
                     <form id="contactForm">
@@ -930,7 +930,7 @@
                         <i class="fas fa-chevron-down faq-icon"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>BikoRent propose un plan gratuit pour commencer, puis des abonnements mensuels à partir de 9,99FCFA /mois selon le nombre de propriétés que vous gérez.</p>
+                        <p>BikoRent propose un plan gratuit pour commencer, puis des abonnements mensuels à partir de 1000 FCFA /mois selon le nombre de propriétés que vous gérez.</p>
                     </div>
                 </div>
                 
@@ -1018,12 +1018,13 @@
         });
 
         // Contact Form
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const submitBtn = document.querySelector('.btn-submit');
             const successMessage = document.getElementById('successMessage');
             const errorMessage = document.getElementById('errorMessage');
+            const form = this;
             
             // Hide previous messages
             successMessage.style.display = 'none';
@@ -1033,21 +1034,55 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
             
-            // Simulate form submission
-            setTimeout(() => {
-                // Reset form
-                this.reset();
+            try {
+                // Récupérer les données du formulaire
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
                 
-                // Show success message
-                successMessage.style.display = 'block';
+                // Envoyer la requête au backend
+                const response = await fetch('/contact/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
                 
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Afficher le message de succès
+                    successMessage.querySelector('p').textContent = result.message;
+                    successMessage.style.display = 'block';
+                    
+                    // Réinitialiser le formulaire
+                    form.reset();
+                    
+                    // Scroll to success message
+                    successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // Afficher le message d'erreur
+                    errorMessage.querySelector('p').textContent = result.error;
+                    errorMessage.style.display = 'block';
+                    
+                    // Scroll to error message
+                    errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi:', error);
+                
+                // Afficher le message d'erreur
+                errorMessage.querySelector('p').textContent = 'Une erreur de connexion est survenue. Veuillez réessayer.';
+                errorMessage.style.display = 'block';
+                
+                // Scroll to error message
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } finally {
                 // Re-enable submit button
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Envoyer le message';
-                
-                // Scroll to success message
-                successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 2000);
+            }
         });
 
         // Add scroll effect to navbar
